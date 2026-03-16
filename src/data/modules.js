@@ -64,15 +64,10 @@ export const modules = [
 export const sidebarPrimary = [
   "Home",
   "Webmail",
-  "Cloud Drive",
-  "Personal Information",
-  "Company Information",
 ];
 
 export const sidebarModules = [
   "DMS",
-  "Program / Daily Progress",
-  "Material Summary",
   "Procurement",
   "Safety (4S)",
   "IMS",

@@ -1,7 +1,8 @@
 import { useState } from "react";
 import Sidebar from "./components/Sidebar.jsx";
 import Topbar from "./components/Topbar.jsx";
-import KpiBar from "./components/KpiBar.jsx";
+import ProjectPhasePie from "./components/ProjectPhasePie.jsx";
+import TaskPieCard from "./components/TaskPieCard.jsx";
 import MemoBoard from "./components/MemoBoard.jsx";
 import NotificationBoard from "./components/NotificationBoard.jsx";
 import ApprovalQueue from "./components/ApprovalQueue.jsx";
@@ -33,7 +34,10 @@ export default function App() {
         <main id="main" className="dashboard">
           {activeView === "home" ? (
             <>
-              <KpiBar />
+              <div className="dashboard-hero">
+                <ProjectPhasePie />
+                <TaskPieCard />
+              </div>
               <div className="dashboard-layout">
                 <div className="dashboard-main">
                   <div className="dashboard-grid">
