@@ -1,4 +1,5 @@
 import { tasks } from "../data/modules.js";
+import { useWorkspace } from "../context/WorkspaceContext.jsx";
 
 const priorityOrder = ["High", "Medium", "Low"];
 const priorityPalette = {
@@ -10,6 +11,7 @@ const priorityPalette = {
 const formatPercent = (value) => `${Math.round(value)}%`;
 
 export default function TaskPieCard() {
+  const { openWorkspace } = useWorkspace();
   const counts = tasks.reduce((acc, task) => {
     const key = task.priority || "Low";
     acc[key] = (acc[key] || 0) + 1;
@@ -51,7 +53,34 @@ export default function TaskPieCard() {
           <h2>Priority mix</h2>
           <p className="panel-sub">Active tasks grouped by urgency.</p>
         </div>
-        <button className="ghost-button" type="button">
+        <button
+          className="ghost-button"
+          type="button"
+          onClick={() =>
+            openWorkspace("infoBoard", {
+              badge: `${total} open`,
+              moduleLabel: "Task Management",
+              sections: [
+                {
+                  title: "Assigned work",
+                  items: tasks.map((task) => ({
+                    title: task.title,
+                    detail: `${task.module} · Due ${task.due}`,
+                    badge: task.priority,
+                    badgeTone:
+                      task.priority === "High"
+                        ? "urgent"
+                        : task.priority === "Medium"
+                          ? "review"
+                          : "approved",
+                  })),
+                },
+              ],
+              subtitle: "Current user workload grouped by urgency and delivery date.",
+              title: "Task board",
+            })
+          }
+        >
           Open task board
         </button>
       </div>

@@ -10,8 +10,8 @@ export default function Sidebar({ activeView = "home", onViewChange }) {
       <div className="sidebar-brand">
         <div className="brand-mark">e</div>
         <div>
-          <p className="brand-name">ePortal</p>
-          <p className="brand-subtitle">Operations Container</p>
+          <p className="brand-name">e-Tysan</p>
+          <p className="brand-subtitle">Integrated Operations Platform</p>
         </div>
       </div>
 

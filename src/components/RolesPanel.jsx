@@ -1,6 +1,9 @@
 import { roles, officeTeams, siteTeams } from "../data/modules.js";
+import { useWorkspace } from "../context/WorkspaceContext.jsx";
 
 export default function RolesPanel() {
+  const { openWorkspace } = useWorkspace();
+
   return (
     <section className="panel span-5" aria-labelledby="roles-title">
       <div className="panel-header">
@@ -8,7 +11,37 @@ export default function RolesPanel() {
           <p className="panel-label">Approval Roles</p>
           <h2 id="roles-title">Department access matrix</h2>
         </div>
-        <button className="ghost-button" type="button">
+        <button
+          className="ghost-button"
+          type="button"
+          onClick={() =>
+            openWorkspace("infoBoard", {
+              badge: `${roles.length} roles`,
+              moduleLabel: "Access Control",
+              sections: [
+                {
+                  title: "Approval roles",
+                  items: roles.map((role) => ({
+                    title: role,
+                    detail: "Role-based access and delegated workflow control.",
+                    badge: "Active",
+                    badgeTone: "approved",
+                  })),
+                },
+                {
+                  title: "Office teams",
+                  items: officeTeams.map((team) => ({ title: team })),
+                },
+                {
+                  title: "Site teams",
+                  items: siteTeams.map((team) => ({ title: team })),
+                },
+              ],
+              subtitle: "RBAC matrix across office and site operating teams.",
+              title: "Permission registry",
+            })
+          }
+        >
           Manage permissions
         </button>
       </div>

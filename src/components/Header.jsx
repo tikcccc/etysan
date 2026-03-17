@@ -7,7 +7,7 @@ export default function Header() {
         <div className="brand-mark">e</div>
         <div>
           <p className="brand-name">e-Tysan System</p>
-          <p className="brand-subtitle">Digitalization Portal - Prototype</p>
+          <p className="brand-subtitle">Digital Operations Platform</p>
         </div>
       </div>
       <nav className="nav" aria-label="Primary">

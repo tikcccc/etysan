@@ -5,6 +5,7 @@ import {
   incidents,
   inspectionForms,
 } from "../data/safety.js";
+import { useWorkspace } from "../context/WorkspaceContext.jsx";
 
 const commandTags = [
   { label: "Gate sync", value: "Live", tone: "ok" },
@@ -64,9 +65,13 @@ const dataOperations = [
 ];
 
 export default function SafetyPage() {
+  const { openPageWorkspace, openWorkspace, resolveRecord } = useWorkspace();
   const blockedWorkers = workers.filter((worker) => worker.accessStatus === "Denied");
   const lowScoreWorkers = workers.filter(
     (worker) => worker.safetyScore < 70 && worker.accessStatus !== "Denied"
+  );
+  const incidentRecords = incidents.map((incident) =>
+    resolveRecord("safetyIncidents", incident)
   );
   const totalSubmissions = inspectionForms.reduce(
     (total, form) => total + form.submissions,
@@ -118,6 +123,23 @@ export default function SafetyPage() {
     (card) => card.label === "Training Compliance"
   );
 
+  const openInspectionPage = (record = null) =>
+    openPageWorkspace(
+      "safetyInspection",
+      record ? { record } : {},
+      "safety"
+    );
+
+  const openIncidentPage = (record = null) =>
+    openPageWorkspace(
+      "safetyIncident",
+      record ? { record } : {},
+      "safety"
+    );
+
+  const openAttendancePage = () =>
+    openPageWorkspace("safetyAttendance", {}, "safety");
+
   return (
     <section className="safety safety-command" aria-label="Safety management">
       <div className="safety-command-bar">
@@ -147,13 +169,25 @@ export default function SafetyPage() {
             </div>
           </div>
           <div className="command-actions">
-            <button className="primary-button" type="button">
+            <button
+              className="primary-button"
+              type="button"
+              onClick={() => openInspectionPage()}
+            >
               Start inspection
             </button>
-            <button className="secondary-button" type="button">
+            <button
+              className="secondary-button"
+              type="button"
+              onClick={() => openIncidentPage(incidentRecords[0])}
+            >
               Report incident
             </button>
-            <button className="ghost-button" type="button">
+            <button
+              className="ghost-button"
+              type="button"
+              onClick={openAttendancePage}
+            >
               Create form
             </button>
           </div>
@@ -181,13 +215,22 @@ export default function SafetyPage() {
                     Mobile-first checklists with offline mode and geo-tags.
                   </p>
                 </div>
-                <button className="ghost-button" type="button">
+                <button
+                  className="ghost-button"
+                  type="button"
+                  onClick={() => openInspectionPage(inspectionQueue[0])}
+                >
                   Open mobile
                 </button>
               </div>
               <div className="inspection-list">
                 {inspectionQueue.map((item) => (
-                  <div key={item.id} className="inspection-item">
+                  <button
+                    key={item.id}
+                    className="inspection-item inspection-item-button"
+                    type="button"
+                    onClick={() => openInspectionPage(item)}
+                  >
                     <div className="inspection-meta">
                       <p className="inspection-title">{item.title}</p>
                       <p className="inspection-sub">
@@ -201,7 +244,7 @@ export default function SafetyPage() {
                     >
                       {item.status}
                     </span>
-                  </div>
+                  </button>
                 ))}
               </div>
             </section>
@@ -215,13 +258,22 @@ export default function SafetyPage() {
                     Preliminary reports auto-escalate to investigation.
                   </p>
                 </div>
-                <button className="ghost-button" type="button">
+                <button
+                  className="ghost-button"
+                  type="button"
+                  onClick={() => openIncidentPage(incidentRecords[0])}
+                >
                   View log
                 </button>
               </div>
               <div className="incident-stream">
-                {incidents.map((incident) => (
-                  <article key={incident.ref} className="incident-row">
+                {incidentRecords.map((incident) => (
+                  <button
+                    key={incident.ref}
+                    className="incident-row incident-row-button"
+                    type="button"
+                    onClick={() => openIncidentPage(incident)}
+                  >
                     <div className="incident-meta">
                       <span className="mono">{incident.ref}</span>
                       <span>{incident.date}</span>
@@ -243,7 +295,7 @@ export default function SafetyPage() {
                         </span>
                       </div>
                     </div>
-                  </article>
+                  </button>
                 ))}
               </div>
             </section>
@@ -259,10 +311,18 @@ export default function SafetyPage() {
                   </p>
                 </div>
                 <div className="builder-actions">
-                  <button className="primary-button" type="button">
+                  <button
+                    className="primary-button"
+                    type="button"
+                    onClick={openAttendancePage}
+                  >
                     Create template
                   </button>
-                  <button className="ghost-button" type="button">
+                  <button
+                    className="ghost-button"
+                    type="button"
+                    onClick={openAttendancePage}
+                  >
                     Template library
                   </button>
                 </div>
@@ -304,7 +364,11 @@ export default function SafetyPage() {
                     OCR verified IDs with real-time gate enforcement.
                   </p>
                 </div>
-                <button className="ghost-button" type="button">
+                <button
+                  className="ghost-button"
+                  type="button"
+                  onClick={openAttendancePage}
+                >
                   OCR scan ID
                 </button>
               </div>
@@ -335,10 +399,38 @@ export default function SafetyPage() {
                 ))}
               </div>
               <div className="registry-actions">
-                <button className="ghost-button" type="button">
+                <button
+                  className="ghost-button"
+                  type="button"
+                  onClick={() =>
+                    openWorkspace("infoBoard", {
+                      badge: `${workers.length} workers`,
+                      moduleLabel: "Safety",
+                      sections: [
+                        {
+                          title: "Worker registry",
+                          items: workers.map((worker) => ({
+                            title: `${worker.id} · ${worker.name}`,
+                            detail: `${worker.trade} · ${worker.location}`,
+                            meta: `${worker.greenCard} · Score ${worker.safetyScore}%`,
+                            badge: worker.accessStatus,
+                            badgeTone:
+                              worker.accessStatus === "Granted" ? "approved" : "urgent",
+                          })),
+                        },
+                      ],
+                      subtitle: "Centralized worker identity, card validity, and access control.",
+                      title: "Worker registry",
+                    })
+                  }
+                >
                   View full registry
                 </button>
-                <button className="secondary-button" type="button">
+                <button
+                  className="secondary-button"
+                  type="button"
+                  onClick={openAttendancePage}
+                >
                   New worker
                 </button>
               </div>
@@ -377,7 +469,11 @@ export default function SafetyPage() {
                 <p className="panel-label">E-training & CWRA</p>
                 <h3>Compliance {complianceCard?.value || "—"}</h3>
               </div>
-              <button className="ghost-button" type="button">
+              <button
+                className="ghost-button"
+                type="button"
+                onClick={openAttendancePage}
+              >
                 Training hub
               </button>
             </div>
@@ -444,13 +540,25 @@ export default function SafetyPage() {
               ))}
             </div>
             <div className="data-actions">
-              <button className="ghost-button" type="button">
+              <button
+                className="ghost-button"
+                type="button"
+                onClick={() => openWorkspace("approvalInbox")}
+              >
                 Export PDF
               </button>
-              <button className="ghost-button" type="button">
+              <button
+                className="ghost-button"
+                type="button"
+                onClick={() => openWorkspace("approvalInbox")}
+              >
                 Export Excel
               </button>
-              <button className="secondary-button" type="button">
+              <button
+                className="secondary-button"
+                type="button"
+                onClick={() => openWorkspace("approvalInbox")}
+              >
                 Open API
               </button>
             </div>

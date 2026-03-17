@@ -1,7 +1,13 @@
+import { dmsDocuments } from "../data/dms.js";
+import { procurementOrders } from "../data/procurement.js";
+import { qsPayments } from "../data/qs.js";
+import { incidents } from "../data/safety.js";
+import { useWorkspace } from "../context/WorkspaceContext.jsx";
+
 const viewMeta = {
   home: {
     eyebrow: "Home",
-    title: "ePortal",
+    title: "e-Tysan System",
     subtitle:
       "Central workspace for approvals, notifications, and shared documents.",
   },
@@ -49,6 +55,85 @@ const viewMeta = {
 
 export default function Topbar({ activeView = "home" }) {
   const meta = viewMeta[activeView] || viewMeta.home;
+  const { openPageWorkspace, openWorkspace, resolveRecord } = useWorkspace();
+
+  const actionsByView = {
+    home: {
+      secondaryLabel: "Approval Inbox",
+      secondaryAction: () => openWorkspace("approvalInbox"),
+      primaryLabel: "Create Request",
+      primaryAction: () =>
+        openPageWorkspace("procurementRequisition", {}, "procurement"),
+    },
+    dms: {
+      secondaryLabel: "Open Review",
+      secondaryAction: () =>
+        openPageWorkspace("dmsReview", {
+          record: resolveRecord("dmsDocuments", dmsDocuments[0]),
+        }, "dms"),
+      primaryLabel: "New Record",
+      primaryAction: () =>
+        openPageWorkspace("dmsUpload", { library: "Project DMS" }, "dms"),
+    },
+    safety: {
+      secondaryLabel: "Incident Log",
+      secondaryAction: () =>
+        openPageWorkspace("safetyIncident", {
+          record: resolveRecord("safetyIncidents", incidents[0]),
+        }, "safety"),
+      primaryLabel: "Start Inspection",
+      primaryAction: () => openPageWorkspace("safetyInspection", {}, "safety"),
+    },
+    procurement: {
+      secondaryLabel: "Track Order",
+      secondaryAction: () =>
+        openPageWorkspace("procurementOrder", {
+          record: resolveRecord("procurementOrders", procurementOrders[0]),
+        }, "procurement"),
+      primaryLabel: "New Requisition",
+      primaryAction: () =>
+        openPageWorkspace("procurementRequisition", {}, "procurement"),
+    },
+    qs: {
+      secondaryLabel: "Open Review",
+      secondaryAction: () =>
+        openPageWorkspace("qsPayment", {
+          record: resolveRecord("qsPayments", qsPayments[0]),
+        }, "qs"),
+      primaryLabel: "Payment Review",
+      primaryAction: () =>
+        openPageWorkspace("qsPayment", {
+          record: resolveRecord("qsPayments", qsPayments[0]),
+        }, "qs"),
+    },
+    hr: {
+      secondaryLabel: "Approval Inbox",
+      secondaryAction: () => openWorkspace("approvalInbox"),
+      primaryLabel: "Create Request",
+      primaryAction: () => openWorkspace("approvalInbox"),
+    },
+    ims: {
+      secondaryLabel: "Approval Inbox",
+      secondaryAction: () => openWorkspace("approvalInbox"),
+      primaryLabel: "Create Request",
+      primaryAction: () => openWorkspace("approvalInbox"),
+    },
+    plant: {
+      secondaryLabel: "Approval Inbox",
+      secondaryAction: () => openWorkspace("approvalInbox"),
+      primaryLabel: "Create Request",
+      primaryAction: () => openWorkspace("approvalInbox"),
+    },
+    webmail: {
+      secondaryLabel: "Approval Inbox",
+      secondaryAction: () => openWorkspace("approvalInbox"),
+      primaryLabel: "Create Request",
+      primaryAction: () =>
+        openPageWorkspace("procurementRequisition", {}, "procurement"),
+    },
+  };
+
+  const actions = actionsByView[activeView] || actionsByView.home;
 
   return (
     <header className="topbar">
@@ -66,11 +151,19 @@ export default function Topbar({ activeView = "home" }) {
             aria-label="Search workflows, documents, and vendors"
           />
         </div>
-        <button className="ghost-button" type="button">
-          New Workflow
+        <button
+          className="ghost-button"
+          type="button"
+          onClick={actions.secondaryAction}
+        >
+          {actions.secondaryLabel}
         </button>
-        <button className="primary-button" type="button">
-          Create Request
+        <button
+          className="primary-button"
+          type="button"
+          onClick={actions.primaryAction}
+        >
+          {actions.primaryLabel}
         </button>
         <div className="user-chip">
           <span className="user-avatar">LK</span>

@@ -8,6 +8,8 @@ import {
   dmsExternalAccess,
   dmsFolderCards,
 } from "../data/dms.js";
+import { useWorkspace } from "../context/WorkspaceContext.jsx";
+
 const quickFilters = [
   { label: "My uploads", count: 28 },
   { label: "Needs review", count: 6 },
@@ -24,13 +26,18 @@ const statusFilters = [
 ];
 const viewModes = ["List", "Grid"];
 export default function DmsPage() {
+  const { openPageWorkspace, openWorkspace, resolveRecord } = useWorkspace();
   const [activeLibrary, setActiveLibrary] = useState(
     dmsLibraries[0]?.id || "project"
   );
-  const filteredDocuments = dmsDocuments.filter(
-    (doc) => doc.library?.toLowerCase() === activeLibrary
-  );
-  const selectedDoc = filteredDocuments[0] ?? dmsDocuments[0];
+  const [selectedDocId, setSelectedDocId] = useState(null);
+  const filteredDocuments = dmsDocuments
+    .map((doc) => resolveRecord("dmsDocuments", doc))
+    .filter((doc) => doc.library?.toLowerCase() === activeLibrary);
+  const selectedDoc =
+    filteredDocuments.find((doc) => doc.id === selectedDocId) ??
+    filteredDocuments[0] ??
+    dmsDocuments[0];
   const activeLibraryLabel =
     dmsLibraries.find((library) => library.id === activeLibrary)?.label ||
     "Project DMS";
@@ -49,6 +56,16 @@ export default function DmsPage() {
         { label: "External Access", value: selectedDoc.externalAccess },
       ]
     : [];
+  const openUploadPage = () =>
+    openPageWorkspace(
+      "dmsUpload",
+      {
+        library: activeLibraryLabel,
+      },
+      "dms"
+    );
+  const openReviewPage = (record) =>
+    openPageWorkspace("dmsReview", { record }, "dms");
 
   return (
     <section className="dms dms-browser">
@@ -101,13 +118,47 @@ export default function DmsPage() {
               </button>
             ))}
           </div>
-          <button className="primary-button" type="button">
+          <button
+            className="primary-button"
+            type="button"
+            onClick={openUploadPage}
+          >
             Upload
           </button>
-          <button className="ghost-button" type="button">
+          <button
+            className="ghost-button"
+            type="button"
+            onClick={() =>
+              openWorkspace("infoBoard", {
+                badge: "Configured",
+                moduleLabel: "Document Management",
+                sections: [
+                  {
+                    title: "Folder templates",
+                    items: dmsCategories.slice(0, 6).map((category) => ({
+                      title: `${category.code} · ${category.name}`,
+                      detail: `${category.count} active records`,
+                      badge: "Template",
+                      badgeTone: "muted",
+                    })),
+                  },
+                ],
+                subtitle: "Controlled folder structures, record categories, and retention grouping.",
+                title: "Folder structure",
+              })
+            }
+          >
             New folder
           </button>
-          <button className="ghost-button" type="button">
+          <button
+            className="ghost-button"
+            type="button"
+            onClick={() =>
+              openWorkspace("dmsShare", {
+                record: selectedDoc,
+              })
+            }
+          >
             Share
           </button>
         </div>
@@ -131,13 +182,63 @@ export default function DmsPage() {
           <div className="dms-panel">
             <p className="panel-label">Quick access</p>
             <div className="quick-links">
-              <button className="quick-link" type="button">
+              <button
+                className="quick-link"
+                type="button"
+                onClick={() =>
+                  openWorkspace("infoBoard", {
+                    badge: "Shared",
+                    badgeTone: "review",
+                    moduleLabel: "Document Management",
+                    sections: [
+                      {
+                        title: "Shared links",
+                        items: dmsExternalAccess.map((item) => ({
+                          title: item.name,
+                          detail: item.scope,
+                          meta: `Expires ${item.expiry}`,
+                        })),
+                      },
+                    ],
+                    subtitle: "Externally issued records with time-bound access control.",
+                    title: "Shared with me",
+                  })
+                }
+              >
                 Shared with me
               </button>
-              <button className="quick-link" type="button">
+              <button
+                className="quick-link"
+                type="button"
+                onClick={() => openWorkspace("approvalInbox")}
+              >
                 Awaiting my approval
               </button>
-              <button className="quick-link" type="button">
+              <button
+                className="quick-link"
+                type="button"
+                onClick={() =>
+                  openWorkspace("infoBoard", {
+                    badge: "Expiring",
+                    badgeTone: "warning",
+                    moduleLabel: "Document Management",
+                    sections: [
+                      {
+                        title: "Expiring access",
+                        items: dmsExternalAccess.map((item) => ({
+                          title: item.name,
+                          detail: item.scope,
+                          meta: `Expires ${item.expiry}`,
+                          badge: item.expiry,
+                          badgeTone: "warning",
+                        })),
+                      },
+                    ],
+                    subtitle: "Time-limited external links and release governance.",
+                    title: "Expiring links",
+                  })
+                }
+              >
                 Expiring links
               </button>
             </div>
@@ -206,6 +307,15 @@ export default function DmsPage() {
               <article
                 key={doc.id}
                 className={`dms-file-row ${doc.id === selectedDoc.id ? "active" : ""}`}
+                onClick={() => setSelectedDocId(doc.id)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    setSelectedDocId(doc.id);
+                  }
+                }}
+                role="button"
+                tabIndex={0}
               >
                 <div className="file-main">
                   <div className={`file-icon type-${doc.type.toLowerCase()}`}>
@@ -232,10 +342,42 @@ export default function DmsPage() {
                 <span className="file-updated">{doc.updated}</span>
                 <span className="file-size">{doc.size}</span>
                 <span className="file-actions">
-                  <button className="file-action" type="button">
+                  <button
+                    className="file-action"
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      openReviewPage(doc);
+                    }}
+                  >
                     Open
                   </button>
-                  <button className="file-action ghost" type="button">
+                  <button
+                    className="file-action ghost"
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      openWorkspace("infoBoard", {
+                        badge: doc.type,
+                        badgeTone: "muted",
+                        moduleLabel: "Document Management",
+                        sections: [
+                          {
+                            title: "File package",
+                            items: [
+                              {
+                                title: doc.title,
+                                detail: `${doc.id} · ${doc.size} · ${doc.owner}`,
+                                meta: "Download request logged",
+                              },
+                            ],
+                          },
+                        ],
+                        subtitle: "Controlled file export with watermark and audit registration.",
+                        title: "Download package",
+                      });
+                    }}
+                  >
                     Download
                   </button>
                 </span>
@@ -260,13 +402,49 @@ export default function DmsPage() {
             </div>
 
             <div className="preview-actions">
-              <button className="primary-button" type="button">
+              <button
+                className="primary-button"
+                type="button"
+                onClick={() => openReviewPage(selectedDoc)}
+              >
                 Open for review
               </button>
-              <button className="ghost-button" type="button">
+              <button
+                className="ghost-button"
+                type="button"
+                onClick={() =>
+                  openWorkspace("dmsShare", {
+                    record: selectedDoc,
+                  })
+                }
+              >
                 Share
               </button>
-              <button className="ghost-button" type="button">
+              <button
+                className="ghost-button"
+                type="button"
+                onClick={() =>
+                  openWorkspace("infoBoard", {
+                    badge: selectedDoc.type,
+                    badgeTone: "muted",
+                    moduleLabel: "Document Management",
+                    sections: [
+                      {
+                        title: "Download package",
+                        items: [
+                          {
+                            title: selectedDoc.title,
+                            detail: `${selectedDoc.id} · ${selectedDoc.size}`,
+                            meta: "Watermark retained on export",
+                          },
+                        ],
+                      },
+                    ],
+                    subtitle: "Document export request with controlled issue safeguards.",
+                    title: "File export",
+                  })
+                }
+              >
                 Download
               </button>
             </div>

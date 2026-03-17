@@ -5,6 +5,7 @@ import {
   procurementRates,
   procurementVendors,
 } from "../data/procurement.js";
+import { useWorkspace } from "../context/WorkspaceContext.jsx";
 
 const procurementTabs = [
   { id: "operations", label: "Operations" },
@@ -20,10 +21,20 @@ const workflowSteps = [
 ];
 
 export default function ProcurementPage() {
+  const { openPageWorkspace, openWorkspace, resolveRecord } = useWorkspace();
   const [activeTab, setActiveTab] = useState("operations");
   const [selectedOrder, setSelectedOrder] = useState(0);
+  const orders = procurementOrders.map((order) =>
+    resolveRecord("procurementOrders", order)
+  );
 
-  const order = procurementOrders[selectedOrder];
+  const order = orders[selectedOrder];
+  const openRequisitionPage = () =>
+    openPageWorkspace("procurementRequisition", {}, "procurement");
+  const openOrderPage = (record) =>
+    openPageWorkspace("procurementOrder", { record }, "procurement");
+  const openDeliveryPage = (record) =>
+    openPageWorkspace("procurementDelivery", { record }, "procurement");
 
   return (
     <section className="module-page procurement-page" aria-label="Procurement">
@@ -62,8 +73,12 @@ export default function ProcurementPage() {
                     <p className="panel-label">Purchase orders</p>
                     <h3>Active requisitions</h3>
                   </div>
-                  <button className="ghost-button" type="button">
-                    New PO
+                  <button
+                    className="ghost-button"
+                    type="button"
+                    onClick={openRequisitionPage}
+                  >
+                    New requisition
                   </button>
                 </div>
                 <div className="data-table proc-orders-table">
@@ -74,12 +89,15 @@ export default function ProcurementPage() {
                     <span>Status</span>
                     <span>Action</span>
                   </div>
-                  {procurementOrders.map((row, index) => (
+                  {orders.map((row, index) => (
                     <button
                       key={row.id}
                       type="button"
                       className={`data-row ${index === selectedOrder ? "active" : ""}`}
-                      onClick={() => setSelectedOrder(index)}
+                      onClick={() => {
+                        setSelectedOrder(index);
+                        openOrderPage(row);
+                      }}
                     >
                       <span className="mono">{row.id}</span>
                       <span>
@@ -87,7 +105,9 @@ export default function ProcurementPage() {
                         <span className="data-sub">{row.item}</span>
                       </span>
                       <span>{row.amount}</span>
-                      <span className="status review">{row.status}</span>
+                      <span className={`status ${row.status.toLowerCase().replace(/\s/g, "-")}`}>
+                        {row.status}
+                      </span>
                       <span className="data-link">Track</span>
                     </button>
                   ))}
@@ -100,7 +120,11 @@ export default function ProcurementPage() {
                     <p className="panel-label">Order lifecycle</p>
                     <h3>Tracking</h3>
                   </div>
-                  <button className="ghost-button" type="button">
+                  <button
+                    className="ghost-button"
+                    type="button"
+                    onClick={() => openOrderPage(order)}
+                  >
                     Timeline
                   </button>
                 </div>
@@ -137,7 +161,11 @@ export default function ProcurementPage() {
                     {order.step === 4 ? (
                       <div className="warning-card">
                         <p>Action required: Verify delivery note.</p>
-                        <button className="primary-button" type="button">
+                        <button
+                          className="primary-button"
+                          type="button"
+                          onClick={() => openDeliveryPage(order)}
+                        >
                           Scan delivery note
                         </button>
                       </div>
@@ -152,19 +180,32 @@ export default function ProcurementPage() {
                     <p className="panel-label">Delivery control</p>
                     <h3>Pending receipts</h3>
                   </div>
-                  <button className="ghost-button" type="button">
+                  <button
+                    className="ghost-button"
+                    type="button"
+                    onClick={() => openOrderPage(order)}
+                  >
                     Export
                   </button>
                 </div>
                 <div className="list-stack">
-                  {procurementOrders.map((row) => (
-                    <div key={row.id} className="list-row">
+                  {orders.map((row) => (
+                    <button
+                      key={row.id}
+                      className="list-row list-row-button"
+                      type="button"
+                      onClick={() =>
+                        row.step === 4 ? openDeliveryPage(row) : openOrderPage(row)
+                      }
+                    >
                       <div>
                         <p className="list-title">{row.item}</p>
                         <p className="list-meta">{row.id} · {row.vendor}</p>
                       </div>
-                      <span className="status pending">{row.status}</span>
-                    </div>
+                      <span className={`status ${row.status.toLowerCase().replace(/\s/g, "-")}`}>
+                        {row.status}
+                      </span>
+                    </button>
                   ))}
                 </div>
               </section>
@@ -201,13 +242,25 @@ export default function ProcurementPage() {
                 <h3>Procurement tools</h3>
               </div>
               <div className="rail-actions">
-                <button className="primary-button" type="button">
+                <button
+                  className="primary-button"
+                  type="button"
+                  onClick={openRequisitionPage}
+                >
                   New requisition
                 </button>
-                <button className="ghost-button" type="button">
+                <button
+                  className="ghost-button"
+                  type="button"
+                  onClick={() => setActiveTab("rates")}
+                >
                   Vendor review
                 </button>
-                <button className="ghost-button" type="button">
+                <button
+                  className="ghost-button"
+                  type="button"
+                  onClick={() => setActiveTab("rates")}
+                >
                   Rate catalog
                 </button>
               </div>
@@ -225,7 +278,30 @@ export default function ProcurementPage() {
                   <p className="panel-label">Annual rate contracts</p>
                   <h3>Transportation, supply, scrap</h3>
                 </div>
-                <button className="ghost-button" type="button">
+                <button
+                  className="ghost-button"
+                  type="button"
+                  onClick={() =>
+                    openWorkspace("infoBoard", {
+                      badge: `${procurementRates.length} contracts`,
+                      moduleLabel: "Procurement",
+                      sections: [
+                        {
+                          title: "Annual rate contracts",
+                          items: procurementRates.map((rate) => ({
+                            title: `${rate.id} · ${rate.vendor}`,
+                            detail: `${rate.category} · ${rate.rate}`,
+                            meta: `Expires ${rate.expiry}`,
+                            badge: rate.status,
+                            badgeTone: rate.status === "Active" ? "approved" : "review",
+                          })),
+                        },
+                      ],
+                      subtitle: "Transportation, supply, and scrap contracts under annual rate control.",
+                      title: "Annual rate register",
+                    })
+                  }
+                >
                   New rate
                 </button>
               </div>
@@ -255,7 +331,30 @@ export default function ProcurementPage() {
                   <p className="panel-label">Vendor compliance</p>
                   <h3>Preferred suppliers</h3>
                 </div>
-                <button className="ghost-button" type="button">
+                <button
+                  className="ghost-button"
+                  type="button"
+                  onClick={() =>
+                    openWorkspace("infoBoard", {
+                      badge: `${procurementVendors.length} vendors`,
+                      moduleLabel: "Procurement",
+                      sections: [
+                        {
+                          title: "Vendor compliance",
+                          items: procurementVendors.map((vendor) => ({
+                            title: vendor.name,
+                            detail: `${vendor.category} · Rating ${vendor.rating}`,
+                            badge: vendor.compliance,
+                            badgeTone:
+                              vendor.compliance === "Active" ? "approved" : "review",
+                          })),
+                        },
+                      ],
+                      subtitle: "Preferred supplier register and compliance watchlist.",
+                      title: "Vendor audit log",
+                    })
+                  }
+                >
                   Audit log
                 </button>
               </div>

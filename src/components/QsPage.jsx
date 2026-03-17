@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { qsKpis, qsPayments, qsAlerts, qsContracts, qsReviews } from "../data/qs.js";
+import { useWorkspace } from "../context/WorkspaceContext.jsx";
 
 const qsTabs = [
   { id: "overview", label: "Overview" },
@@ -14,10 +15,16 @@ const workflowSteps = [
 ];
 
 export default function QsPage() {
+  const { openPageWorkspace, openWorkspace, resolveRecord } = useWorkspace();
   const [activeTab, setActiveTab] = useState("overview");
   const [selectedPayment, setSelectedPayment] = useState(0);
+  const payments = qsPayments.map((payment) =>
+    resolveRecord("qsPayments", payment)
+  );
 
-  const payment = qsPayments[selectedPayment];
+  const payment = payments[selectedPayment];
+  const openPaymentPage = (record) =>
+    openPageWorkspace("qsPayment", { record }, "qs");
 
   return (
     <section className="module-page qs-page" aria-label="QS management">
@@ -56,7 +63,11 @@ export default function QsPage() {
                     <p className="panel-label">Subcontractor payments</p>
                     <h3>Payment certificates (QS-B8)</h3>
                   </div>
-                  <button className="ghost-button" type="button">
+                  <button
+                    className="ghost-button"
+                    type="button"
+                    onClick={() => openPaymentPage(payment)}
+                  >
                     Filter
                   </button>
                 </div>
@@ -68,12 +79,15 @@ export default function QsPage() {
                     <span>Amount</span>
                     <span>Status</span>
                   </div>
-                  {qsPayments.map((row, index) => (
+                  {payments.map((row, index) => (
                     <button
                       key={row.id}
                       type="button"
                       className={`data-row ${index === selectedPayment ? "active" : ""}`}
-                      onClick={() => setSelectedPayment(index)}
+                      onClick={() => {
+                        setSelectedPayment(index);
+                        openPaymentPage(row);
+                      }}
                     >
                       <span className="mono">{row.id}</span>
                       <span>
@@ -81,7 +95,9 @@ export default function QsPage() {
                       </span>
                       <span>{row.work}</span>
                       <span>{row.amount}</span>
-                      <span className="status review">{row.status}</span>
+                      <span className={`status ${row.status.toLowerCase().replace(/\s/g, "-")}`}>
+                        {row.status}
+                      </span>
                     </button>
                   ))}
                 </div>
@@ -93,7 +109,11 @@ export default function QsPage() {
                     <p className="panel-label">Workflow status</p>
                     <h3>Approval progress</h3>
                   </div>
-                  <button className="ghost-button" type="button">
+                  <button
+                    className="ghost-button"
+                    type="button"
+                    onClick={() => openPaymentPage(payment)}
+                  >
                     View log
                   </button>
                 </div>
@@ -119,10 +139,18 @@ export default function QsPage() {
                       ))}
                     </div>
                     <div className="workflow-actions">
-                      <button className="primary-button" type="button">
+                      <button
+                        className="primary-button"
+                        type="button"
+                        onClick={() => openPaymentPage(payment)}
+                      >
                         Certify payment
                       </button>
-                      <button className="secondary-button" type="button">
+                      <button
+                        className="secondary-button"
+                        type="button"
+                        onClick={() => openPaymentPage(payment)}
+                      >
                         Request revision
                       </button>
                     </div>
@@ -136,7 +164,11 @@ export default function QsPage() {
                     <p className="panel-label">Cost review</p>
                     <h3>Open review items</h3>
                   </div>
-                  <button className="ghost-button" type="button">
+                  <button
+                    className="ghost-button"
+                    type="button"
+                    onClick={() => openPaymentPage(payment)}
+                  >
                     Review queue
                   </button>
                 </div>
@@ -163,7 +195,11 @@ export default function QsPage() {
                 <div className="highlight-card">
                   <p className="highlight-title">Project All Risk</p>
                   <p className="highlight-meta">Expires in 62 days</p>
-                  <button className="ghost-button" type="button">
+                  <button
+                    className="ghost-button"
+                    type="button"
+                    onClick={() => openWorkspace("approvalInbox")}
+                  >
                     Review policy
                   </button>
                 </div>
@@ -193,13 +229,25 @@ export default function QsPage() {
                 <h3>Manage workflow</h3>
               </div>
               <div className="rail-actions">
-                <button className="primary-button" type="button">
+                <button
+                  className="primary-button"
+                  type="button"
+                  onClick={() => openPaymentPage(payment)}
+                >
                   Generate summary
                 </button>
-                <button className="ghost-button" type="button">
+                <button
+                  className="ghost-button"
+                  type="button"
+                  onClick={() => openWorkspace("approvalInbox")}
+                >
                   Upload VO
                 </button>
-                <button className="ghost-button" type="button">
+                <button
+                  className="ghost-button"
+                  type="button"
+                  onClick={() => openWorkspace("approvalInbox")}
+                >
                   Insurance register
                 </button>
               </div>
@@ -217,7 +265,11 @@ export default function QsPage() {
                   <p className="panel-label">Contracts</p>
                   <h3>Main contracts & subcontracts</h3>
                 </div>
-                <button className="ghost-button" type="button">
+                <button
+                  className="ghost-button"
+                  type="button"
+                  onClick={() => openWorkspace("approvalInbox")}
+                >
                   Add contract
                 </button>
               </div>
@@ -250,7 +302,11 @@ export default function QsPage() {
                   <p className="panel-label">Records</p>
                   <h3>Cost review & insurance log</h3>
                 </div>
-                <button className="ghost-button" type="button">
+                <button
+                  className="ghost-button"
+                  type="button"
+                  onClick={() => openWorkspace("approvalInbox")}
+                >
                   Export
                 </button>
               </div>

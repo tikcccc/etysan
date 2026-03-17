@@ -1,4 +1,5 @@
 import { projects } from "../data/modules.js";
+import { useWorkspace } from "../context/WorkspaceContext.jsx";
 
 const phaseOrder = ["Tender", "Design", "Construction", "Handover"];
 const phasePalette = {
@@ -11,6 +12,7 @@ const phasePalette = {
 const formatPercent = (value) => `${Math.round(value)}%`;
 
 export default function ProjectPhasePie() {
+  const { openWorkspace } = useWorkspace();
   const counts = projects.reduce((acc, project) => {
     const key = project.phase || "Other";
     acc[key] = (acc[key] || 0) + 1;
@@ -64,7 +66,30 @@ export default function ProjectPhasePie() {
             Current active projects grouped by delivery phase.
           </p>
         </div>
-        <button className="ghost-button" type="button">
+        <button
+          className="ghost-button"
+          type="button"
+          onClick={() =>
+            openWorkspace("infoBoard", {
+              badge: `${total} projects`,
+              moduleLabel: "Portfolio",
+              sections: [
+                {
+                  title: "Phase distribution",
+                  items: segments.map((segment) => ({
+                    title: segment.label,
+                    detail: `${segment.count} active projects`,
+                    meta: total ? formatPercent((segment.count / total) * 100) : "0%",
+                    badge: `${segment.count}`,
+                    badgeTone: "muted",
+                  })),
+                },
+              ],
+              subtitle: "Active portfolio grouped by tender, design, construction, and handover phases.",
+              title: "Phase distribution",
+            })
+          }
+        >
           View portfolio
         </button>
       </div>
