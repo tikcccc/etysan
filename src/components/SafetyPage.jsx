@@ -140,6 +140,21 @@ export default function SafetyPage() {
   const openAttendancePage = () =>
     openPageWorkspace("safetyAttendance", {}, "safety");
 
+  const openDataBoard = (title, subtitle, items, badge, badgeTone = "info") =>
+    openWorkspace("infoBoard", {
+      moduleLabel: "Safety",
+      title,
+      subtitle,
+      badge,
+      badgeTone,
+      sections: [
+        {
+          title: "Data exchange",
+          items,
+        },
+      ],
+    });
+
   return (
     <section className="safety safety-command" aria-label="Safety management">
       <div className="safety-command-bar">
@@ -543,21 +558,85 @@ export default function SafetyPage() {
               <button
                 className="ghost-button"
                 type="button"
-                onClick={() => openWorkspace("approvalInbox")}
+                onClick={() =>
+                  openDataBoard(
+                    "Safety PDF export",
+                    "Compiled patrol, incident, and training packets for audit issue.",
+                    [
+                      {
+                        title: "Audit pack",
+                        detail: "Incident RCA, patrol checklist, and worker acknowledgement.",
+                        meta: "Last built 10:22",
+                        badge: "Ready",
+                        badgeTone: "approved",
+                      },
+                      {
+                        title: "Distribution rule",
+                        detail: "Watermarked PDF bundle for PM, Safety Manager, and client rep.",
+                        meta: "3 recipients",
+                      },
+                    ],
+                    "PDF"
+                  )
+                }
               >
                 Export PDF
               </button>
               <button
                 className="ghost-button"
                 type="button"
-                onClick={() => openWorkspace("approvalInbox")}
+                onClick={() =>
+                  openDataBoard(
+                    "Safety Excel export",
+                    "Structured extract for patrol trends, attendance, and corrective actions.",
+                    [
+                      {
+                        title: "Dataset scope",
+                        detail: "Patrol findings, training expiry, and blocked gate access records.",
+                        meta: "3 sheets",
+                        badge: "Prepared",
+                        badgeTone: "review",
+                      },
+                      {
+                        title: "Refresh cadence",
+                        detail: "Workbook refreshes after each mobile sync batch.",
+                        meta: "2 min lag",
+                      },
+                    ],
+                    "Excel",
+                    "review"
+                  )
+                }
               >
                 Export Excel
               </button>
               <button
                 className="secondary-button"
                 type="button"
-                onClick={() => openWorkspace("approvalInbox")}
+                onClick={() =>
+                  openDataBoard(
+                    "Safety API gateway",
+                    "Connected endpoints for HR, payroll, and site access integrations.",
+                    [
+                      {
+                        title: "Live integrations",
+                        detail: "Worker registry, payroll attendance sync, and gate access validation.",
+                        meta: "3 endpoints",
+                        badge: "Live",
+                        badgeTone: "approved",
+                      },
+                      {
+                        title: "Pending queue",
+                        detail: "Offline patrol submissions waiting to publish from mobile devices.",
+                        meta: "3 records",
+                        badge: "Queued",
+                        badgeTone: "warning",
+                      },
+                    ],
+                    "API",
+                    "approved"
+                  )
+                }
               >
                 Open API
               </button>

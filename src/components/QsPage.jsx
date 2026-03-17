@@ -25,6 +25,20 @@ export default function QsPage() {
   const payment = payments[selectedPayment];
   const openPaymentPage = (record) =>
     openPageWorkspace("qsPayment", { record }, "qs");
+  const openQsInfoBoard = (title, subtitle, items, badge, badgeTone = "info") =>
+    openWorkspace("infoBoard", {
+      moduleLabel: "QS",
+      title,
+      subtitle,
+      badge,
+      badgeTone,
+      sections: [
+        {
+          title: "Workflow details",
+          items,
+        },
+      ],
+    });
 
   return (
     <section className="module-page qs-page" aria-label="QS management">
@@ -198,7 +212,28 @@ export default function QsPage() {
                   <button
                     className="ghost-button"
                     type="button"
-                    onClick={() => openWorkspace("approvalInbox")}
+                    onClick={() =>
+                      openQsInfoBoard(
+                        "Insurance policy review",
+                        "Coverage register and renewal checkpoints for the active project policy.",
+                        [
+                          {
+                            title: "Policy owner",
+                            detail: "Commercial team coordinating insurer response and claims register.",
+                            meta: "Owner C. Lau",
+                            badge: "62 days left",
+                            badgeTone: "warning",
+                          },
+                          {
+                            title: "Renewal checklist",
+                            detail: "Confirm insured amount, subcontractor extensions, and claim history.",
+                            meta: "3 actions",
+                          },
+                        ],
+                        "Policy",
+                        "review"
+                      )
+                    }
                   >
                     Review policy
                   </button>
@@ -239,14 +274,56 @@ export default function QsPage() {
                 <button
                   className="ghost-button"
                   type="button"
-                  onClick={() => openWorkspace("approvalInbox")}
+                  onClick={() =>
+                    openQsInfoBoard(
+                      "Variation order intake",
+                      "Capture uploaded VO backup before the certification package is locked.",
+                      [
+                        {
+                          title: "Required attachments",
+                          detail: "Instruction, measurement backup, and subcontractor pricing breakdown.",
+                          meta: "3 files",
+                          badge: "Pending upload",
+                          badgeTone: "warning",
+                        },
+                        {
+                          title: "Routing",
+                          detail: "Once uploaded, QS validates linkage to the payment certificate.",
+                          meta: payment?.id || "QS-B8",
+                        },
+                      ],
+                      "VO",
+                      "warning"
+                    )
+                  }
                 >
                   Upload VO
                 </button>
                 <button
                   className="ghost-button"
                   type="button"
-                  onClick={() => openWorkspace("approvalInbox")}
+                  onClick={() =>
+                    openQsInfoBoard(
+                      "Insurance register",
+                      "Central list of active policies, claims, and renewal ownership.",
+                      [
+                        {
+                          title: "Register status",
+                          detail: "Project all risk, employee compensation, and third-party liability.",
+                          meta: "3 active policies",
+                          badge: "Current",
+                          badgeTone: "approved",
+                        },
+                        {
+                          title: "Next review",
+                          detail: "Finance and QS reconcile premium allocation before month end.",
+                          meta: "Due Jan 31",
+                        },
+                      ],
+                      "Register",
+                      "approved"
+                    )
+                  }
                 >
                   Insurance register
                 </button>
@@ -268,7 +345,28 @@ export default function QsPage() {
                 <button
                   className="ghost-button"
                   type="button"
-                  onClick={() => openWorkspace("approvalInbox")}
+                  onClick={() =>
+                    openQsInfoBoard(
+                      "Contract onboarding",
+                      "Prepare metadata and authority checks before a new contract record is added.",
+                      [
+                        {
+                          title: "Required fields",
+                          detail: "Employer, contract value, VO baseline, retention, and payment terms.",
+                          meta: "5 fields",
+                          badge: "Template ready",
+                          badgeTone: "review",
+                        },
+                        {
+                          title: "Authority route",
+                          detail: "Commercial lead validates contract type before release to the register.",
+                          meta: "QS -> Director",
+                        },
+                      ],
+                      "Draft",
+                      "review"
+                    )
+                  }
                 >
                   Add contract
                 </button>
@@ -305,7 +403,27 @@ export default function QsPage() {
                 <button
                   className="ghost-button"
                   type="button"
-                  onClick={() => openWorkspace("approvalInbox")}
+                  onClick={() =>
+                    openQsInfoBoard(
+                      "QS export package",
+                      "Generate a controlled extract for reviews, insurance, and payment audits.",
+                      [
+                        {
+                          title: "Workbook contents",
+                          detail: "Cost review log, insurance register, and subcontract payment status.",
+                          meta: "3 sheets",
+                          badge: "Ready",
+                          badgeTone: "approved",
+                        },
+                        {
+                          title: "Audit note",
+                          detail: "Exports include current filter state and user stamp.",
+                          meta: "Lisa Ko",
+                        },
+                      ],
+                      "Export"
+                    )
+                  }
                 >
                   Export
                 </button>

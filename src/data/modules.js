@@ -73,7 +73,7 @@ export const sidebarModules = [
   "IMS",
   "Plant",
   "QS",
-  "Attendance",
+  "HR",
 ];
 
 export const kpis = [

@@ -56,32 +56,9 @@ export default function TaskPieCard() {
         <button
           className="ghost-button"
           type="button"
-          onClick={() =>
-            openWorkspace("infoBoard", {
-              badge: `${total} open`,
-              moduleLabel: "Task Management",
-              sections: [
-                {
-                  title: "Assigned work",
-                  items: tasks.map((task) => ({
-                    title: task.title,
-                    detail: `${task.module} · Due ${task.due}`,
-                    badge: task.priority,
-                    badgeTone:
-                      task.priority === "High"
-                        ? "urgent"
-                        : task.priority === "Medium"
-                          ? "review"
-                          : "approved",
-                  })),
-                },
-              ],
-              subtitle: "Current user workload grouped by urgency and delivery date.",
-              title: "Task board",
-            })
-          }
+          onClick={() => openWorkspace("notificationCenter")}
         >
-          Open task board
+          Open notification center
         </button>
       </div>
       <div className="task-pie-layout">

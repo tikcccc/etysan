@@ -9,15 +9,15 @@ export default function ApprovalQueue() {
     <section className="panel span-8" aria-labelledby="approval-title">
       <div className="panel-header">
         <div>
-          <p className="panel-label">Approval Queue</p>
-          <h2 id="approval-title">Items waiting for action</h2>
+          <p className="panel-label">To-Do List</p>
+          <h2 id="approval-title">Pending actions waiting for review</h2>
         </div>
         <button
           className="ghost-button"
           type="button"
-          onClick={() => openWorkspace("approvalInbox")}
+          onClick={() => openWorkspace("notificationCenter")}
         >
-          View all approvals
+          Open notification center
         </button>
       </div>
       <div className="table">

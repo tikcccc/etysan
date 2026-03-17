@@ -210,9 +210,33 @@ export default function DmsPage() {
               <button
                 className="quick-link"
                 type="button"
-                onClick={() => openWorkspace("approvalInbox")}
+                onClick={() =>
+                  openWorkspace("infoBoard", {
+                    badge: `${dmsApprovals.length} routed`,
+                    badgeTone: "review",
+                    moduleLabel: "Document Management",
+                    sections: [
+                      {
+                        title: "Controlled review queue",
+                        items: dmsApprovals.map((step) => ({
+                          title: step.name,
+                          detail: step.step,
+                          badge: step.status,
+                          badgeTone:
+                            step.status === "Approved"
+                              ? "approved"
+                              : step.status === "Pending"
+                                ? "review"
+                                : "muted",
+                        })),
+                      },
+                    ],
+                    subtitle: "DMS-specific review routing for controlled document issue.",
+                    title: "Pending review",
+                  })
+                }
               >
-                Awaiting my approval
+                Pending review
               </button>
               <button
                 className="quick-link"

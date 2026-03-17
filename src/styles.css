@@ -1288,6 +1288,12 @@ button {
   gap: 0.5rem;
 }
 
+.ims-record-button {
+  width: 100%;
+  text-align: left;
+  background: rgba(31, 111, 235, 0.04);
+}
+
 .ims-record-head {
   display: flex;
   justify-content: space-between;
@@ -1343,6 +1349,12 @@ button {
   align-items: center;
   border-bottom: 1px solid rgba(31, 42, 58, 0.08);
   padding-bottom: 0.6rem;
+}
+
+.permit-item-button {
+  width: 100%;
+  text-align: left;
+  background: transparent;
 }
 
 .permit-title {
@@ -3738,6 +3750,9 @@ button {
 
 .workspace-badge.approved,
 .workspace-badge.complete,
+.workspace-badge.completed,
+.workspace-badge.closed,
+.workspace-badge.valid,
 .workspace-badge.qs-handover {
   background: rgba(35, 194, 131, 0.16);
   color: #1f8f63;
@@ -3745,14 +3760,20 @@ button {
 
 .workspace-badge.warning,
 .workspace-badge.certifying,
+.workspace-badge.expiring-soon,
+.workspace-badge.in-progress,
 .workspace-badge.in-review,
+.workspace-badge.logged,
+.workspace-badge.scheduled,
 .workspace-badge.delivery-pending,
+.workspace-badge.waiting-parts,
 .workspace-badge.under-review {
   background: rgba(255, 183, 77, 0.22);
   color: #a36810;
 }
 
 .workspace-badge.urgent,
+.workspace-badge.open,
 .workspace-badge.approval-pending {
   background: rgba(255, 99, 99, 0.15);
   color: #d04444;

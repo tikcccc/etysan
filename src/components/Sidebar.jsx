@@ -69,7 +69,7 @@ export default function Sidebar({ activeView = "home", onViewChange }) {
                 (item === "Procurement" && activeView === "procurement") ||
                 (item === "Plant" && activeView === "plant") ||
                 (item === "QS" && activeView === "qs") ||
-                (item === "Attendance" && activeView === "hr") ||
+                (item === "HR" && activeView === "hr") ||
                 (item === "IMS" && activeView === "ims")
                   ? "active"
                   : ""
@@ -91,7 +91,7 @@ export default function Sidebar({ activeView = "home", onViewChange }) {
                 if (item === "QS") {
                   onViewChange?.("qs");
                 }
-                if (item === "Attendance") {
+                if (item === "HR") {
                   onViewChange?.("hr");
                 }
                 if (item === "IMS") {

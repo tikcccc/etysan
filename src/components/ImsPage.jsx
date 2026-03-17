@@ -6,9 +6,49 @@ import {
   imsTraining,
   imsInspections,
 } from "../data/ims.js";
+import { useWorkspace } from "../context/WorkspaceContext.jsx";
 
 export default function ImsPage() {
   const [activeTab, setActiveTab] = useState("quality");
+  const { openPageWorkspace, openWorkspace, resolveRecord } = useWorkspace();
+  const complaintRecords = imsComplaints.map((record) =>
+    resolveRecord("imsComplaints", record)
+  );
+  const permitRecords = imsPermits.map((record) => resolveRecord("imsPermits", record));
+  const inspectionRecords = imsInspections.map((record) =>
+    resolveRecord("imsInspections", record)
+  );
+
+  const openComplaintPage = (record = null) =>
+    openPageWorkspace(
+      "imsComplaint",
+      record ? { record } : {},
+      "ims"
+    );
+
+  const openPermitPage = (record = null) =>
+    openPageWorkspace(
+      "imsPermit",
+      record ? { record } : {},
+      "ims"
+    );
+
+  const openInspectionPage = (record = null) =>
+    openPageWorkspace(
+      "imsInspection",
+      record ? { record } : {},
+      "ims"
+    );
+
+  const openImsInfoBoard = (title, subtitle, sections, badge, badgeTone = "info") =>
+    openWorkspace("infoBoard", {
+      moduleLabel: "IMS",
+      title,
+      subtitle,
+      badge,
+      badgeTone,
+      sections,
+    });
 
   return (
     <section className="module-page ims-page" aria-label="IMS">
@@ -51,13 +91,18 @@ export default function ImsPage() {
                   <p className="panel-label">Client complaint record</p>
                   <h3>Quality management workflow</h3>
                 </div>
-                <button className="ghost-button" type="button">
+                <button className="ghost-button" type="button" onClick={() => openComplaintPage()}>
                   New complaint
                 </button>
               </div>
               <div className="ims-record-grid">
-                {imsComplaints.map((row) => (
-                  <article key={row.id} className="ims-record-card">
+                {complaintRecords.map((row) => (
+                  <button
+                    key={row.id}
+                    className="ims-record-card ims-record-button"
+                    type="button"
+                    onClick={() => openComplaintPage(row)}
+                  >
                     <div className="ims-record-head">
                       <div>
                         <p className="ims-record-title">{row.id}</p>
@@ -80,11 +125,38 @@ export default function ImsPage() {
                         {row.signature ? "Signed" : "Sign now"}
                       </span>
                     </div>
-                  </article>
+                  </button>
                 ))}
               </div>
               <div className="panel-footer">
-                <button className="ghost-button" type="button">
+                <button
+                  className="ghost-button"
+                  type="button"
+                  onClick={() =>
+                    openImsInfoBoard(
+                      "Monthly quality summary",
+                      "Open complaints, CAR status, and signed closures queued for reporting.",
+                      [
+                        {
+                          title: "Quality roll-up",
+                          items: complaintRecords.slice(0, 4).map((row) => ({
+                            title: row.subject,
+                            detail: `${row.id} · ${row.client}`,
+                            meta: row.date,
+                            badge: row.status,
+                            badgeTone:
+                              row.status === "Closed"
+                                ? "approved"
+                                : row.status === "Investigation"
+                                  ? "warning"
+                                  : "review",
+                          })),
+                        },
+                      ],
+                      "Monthly"
+                    )
+                  }
+                >
                   Generate monthly summary
                 </button>
               </div>
@@ -98,8 +170,13 @@ export default function ImsPage() {
                 <h3>CAR follow-up</h3>
               </div>
               <div className="list-stack">
-                {imsComplaints.map((row) => (
-                  <div key={row.id} className="list-row compact">
+                {complaintRecords.map((row) => (
+                  <button
+                    key={row.id}
+                    className="list-row compact list-row-button"
+                    type="button"
+                    onClick={() => openComplaintPage(row)}
+                  >
                     <div>
                       <p className="list-title">{row.subject}</p>
                       <p className="list-meta">{row.car}</p>
@@ -111,7 +188,7 @@ export default function ImsPage() {
                     >
                       {row.status}
                     </span>
-                  </div>
+                  </button>
                 ))}
               </div>
             </section>
@@ -129,13 +206,22 @@ export default function ImsPage() {
                     <p className="panel-label">Permit & license</p>
                     <h3>Expiration tracking</h3>
                   </div>
-                  <button className="ghost-button" type="button">
+                  <button
+                    className="ghost-button"
+                    type="button"
+                    onClick={() => openPermitPage(permitRecords[2] || permitRecords[0])}
+                  >
                     Renewal log
                   </button>
                 </div>
                 <div className="permit-list">
-                  {imsPermits.map((permit) => (
-                    <div key={permit.id} className="permit-item">
+                  {permitRecords.map((permit) => (
+                    <button
+                      key={permit.id}
+                      className="permit-item permit-item-button"
+                      type="button"
+                      onClick={() => openPermitPage(permit)}
+                    >
                       <div>
                         <p className="permit-title">{permit.type}</p>
                         <p className="permit-meta">
@@ -152,7 +238,7 @@ export default function ImsPage() {
                         </span>
                         <span className="permit-expiry">Exp: {permit.expiry}</span>
                       </div>
-                    </div>
+                    </button>
                   ))}
                 </div>
               </section>
@@ -163,7 +249,27 @@ export default function ImsPage() {
                     <p className="panel-label">Env training</p>
                     <h3>Recent sessions</h3>
                   </div>
-                  <button className="ghost-button" type="button">
+                  <button
+                    className="ghost-button"
+                    type="button"
+                    onClick={() =>
+                      openImsInfoBoard(
+                        "Environmental training roster",
+                        "Upcoming drills and completed briefings linked to the environmental module.",
+                        [
+                          {
+                            title: "Sessions",
+                            items: imsTraining.map((item) => ({
+                              title: item.title,
+                              detail: item.date,
+                              meta: item.action,
+                            })),
+                          },
+                        ],
+                        `${imsTraining.length} sessions`
+                      )
+                    }
+                  >
                     View roster
                   </button>
                 </div>
@@ -187,13 +293,22 @@ export default function ImsPage() {
                   <p className="panel-label">Monthly inspection</p>
                   <h3>Environmental inspection records</h3>
                 </div>
-                <button className="ghost-button" type="button">
+                <button
+                  className="ghost-button"
+                  type="button"
+                  onClick={() => openInspectionPage(inspectionRecords[0])}
+                >
                   Start inspection
                 </button>
               </div>
               <div className="ims-record-grid ims-record-grid--wide">
-                {imsInspections.map((ins) => (
-                  <article key={ins.id} className="ims-record-card">
+                {inspectionRecords.map((ins) => (
+                  <button
+                    key={ins.id}
+                    className="ims-record-card ims-record-button"
+                    type="button"
+                    onClick={() => openInspectionPage(ins)}
+                  >
                     <div className="ims-record-head">
                       <div>
                         <p className="ims-record-title">{ins.id}</p>
@@ -239,7 +354,7 @@ export default function ImsPage() {
                         )}
                       </div>
                     </div>
-                  </article>
+                  </button>
                 ))}
               </div>
             </section>
@@ -252,8 +367,13 @@ export default function ImsPage() {
                 <h3>Expiring permits</h3>
               </div>
               <div className="list-stack">
-                {imsPermits.map((permit) => (
-                  <div key={permit.id} className="list-row compact">
+                {permitRecords.map((permit) => (
+                  <button
+                    key={permit.id}
+                    className="list-row compact list-row-button"
+                    type="button"
+                    onClick={() => openPermitPage(permit)}
+                  >
                     <div>
                       <p className="list-title">{permit.type}</p>
                       <p className="list-meta">{permit.expiry}</p>
@@ -265,7 +385,7 @@ export default function ImsPage() {
                     >
                       {permit.status}
                     </span>
-                  </div>
+                  </button>
                 ))}
               </div>
             </section>
