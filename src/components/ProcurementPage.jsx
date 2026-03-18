@@ -63,9 +63,9 @@ export default function ProcurementPage() {
           <div className="module-main">
             <StorySpotlight
               eyebrow="Three-way match"
-              title="PR to delivery and three-way match"
-              description="Route requisitions through approval, delivery note verification, and three-way match handover to QS."
-              tags={["Delivery Note", "GRN", "Invoice variance"]}
+              title="PR -> PO -> Delivery -> Three-way match"
+              description="Route PR through approval, PO issue, delivery note verification, and three-way match handover to QS."
+              tags={["PO issued", "Delivery note / GRN", "Invoice variance"]}
               primaryAction={{
                 label: "Open delivery and match",
                 onClick: () => openDeliveryPage(deliveryDemoOrder),

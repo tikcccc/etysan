@@ -95,26 +95,41 @@ const imsComplaintPresets = {
   "CMP-25-003": {
     severity: "Major",
     owner: "Phoebe Ngan",
+    project: "West Kowloon Rail Extension",
+    contractor: "East Harbor Steelworks",
+    responsibleParties: "Phoebe Ngan / Night foreman / East Harbor Steelworks rep",
     source: "Client complaint hotline",
     rootCause: "Night work acoustic screen not repositioned after delivery unloading.",
     action: "Re-route unloading, install temporary acoustic barrier, and retrain night foreman.",
     dueDate: "2025-10-28",
+    notificationChannel: "Email + platform notice",
+    notificationRecipients: "MTRC site representative / Project manager / Contractor rep",
   },
   "CMP-25-004": {
     severity: "Moderate",
     owner: "Keith Ngai",
+    project: "Kai Tak Terminal Upgrade",
+    contractor: "Harbour Civil Works JV",
+    responsibleParties: "Keith Ngai / Alan Yeung / Harbour Civil Works JV foreman",
     source: "Consultant site walk",
     rootCause: "Dust suppression team missed gate handover after pump maintenance.",
     action: "Add daily handover checkpoint and assign standby water truck.",
     dueDate: "2025-10-31",
+    notificationChannel: "Email + platform notice",
+    notificationRecipients: "ArchSD representative / Site manager / Contractor supervisor",
   },
   "CMP-25-009": {
     severity: "Major",
     owner: "Wilson Lam",
+    project: "Tsing Yi Logistics Hub",
+    contractor: "Foundation & Marine Package",
+    responsibleParties: "Wilson Lam / Project QS lead / Foundation package manager",
     source: "Project director escalation",
     rootCause: "Rectification photos uploaded after the contractual response window.",
     action: "Lock response SLA in NCR tracker and route photo proof to reviewer on submission.",
     dueDate: "2025-11-02",
+    notificationChannel: "Email + signed closure notice",
+    notificationRecipients: "ArchSD representative / Project director / Package manager",
   },
 };
 
@@ -1602,7 +1617,7 @@ function SafetyInspectionWorkspace({
   return (
     <WorkspaceShell
       moduleLabel="Safety"
-      title="Ad-hoc issue workflow"
+      title="Ad-hoc issue closure"
       subtitle={`${inspection.title} · ${inspection.zone}`}
       badge={stage === 4 ? "Closed" : stage === 3 ? "Verification" : "Open"}
       badgeTone={stage === 4 ? "approved" : stage === 3 ? "review" : "urgent"}
@@ -3298,11 +3313,31 @@ function ImsComplaintWorkspace({
     client: sourceRecord.client || "Client representative",
     subject: sourceRecord.subject || "New complaint",
     owner: preset.owner,
+    project: sourceRecord.project || preset.project || "West Kowloon Rail Extension",
+    contractor: sourceRecord.contractor || preset.contractor || "Main works package",
+    responsibleParties:
+      sourceRecord.responsibleParties ||
+      preset.responsibleParties ||
+      `${preset.owner} / Project manager / Contractor rep`,
     severity: preset.severity,
     rootCause: preset.rootCause,
     action: preset.action,
     dueDate: preset.dueDate,
+    notificationChannel:
+      sourceRecord.closureNotificationChannel ||
+      preset.notificationChannel ||
+      "Email + platform notice",
+    notificationRecipients:
+      sourceRecord.closureNotificationRecipients ||
+      preset.notificationRecipients ||
+      `${sourceRecord.client || "Client representative"} / Project manager / Contractor rep`,
   });
+  const [notificationStatus, setNotificationStatus] = useState(
+    sourceRecord.closureNotificationStatus || (sourceRecord.signature ? "Sent" : "Pending close")
+  );
+  const [notificationIssuedAt, setNotificationIssuedAt] = useState(
+    sourceRecord.closureNotificationAt || (sourceRecord.signature ? `${sourceRecord.date} 18:20` : "Pending e-sign")
+  );
   const [timeline, setTimeline] = useState([
     {
       title: "Complaint record opened",
@@ -3336,10 +3371,44 @@ function ImsComplaintWorkspace({
     });
   }
 
+  function openClosureNotification() {
+    openWorkspace("infoBoard", {
+      moduleLabel: "IMS - Quality",
+      title: "Closure notification",
+      subtitle: "Client and responsible parties notified after signed complaint closure.",
+      badge: notificationStatus,
+      badgeTone: notificationStatus === "Sent" ? "approved" : "review",
+      sections: [
+        {
+          title: "Notification route",
+          items: [
+            {
+              title: form.client,
+              detail: `${form.project} · ${form.contractor}`,
+              meta: `${form.notificationChannel} · ${notificationIssuedAt}`,
+              badge: notificationStatus,
+              badgeTone: notificationStatus === "Sent" ? "approved" : "review",
+            },
+            {
+              title: "Responsible parties",
+              detail: form.responsibleParties,
+              meta: form.notificationRecipients,
+            },
+          ],
+        },
+      ],
+    });
+  }
+
   function advance() {
     if (stage === 1) {
       setStage(2);
-      updateRecord("imsComplaints", form.id, { status: "Investigation" });
+      updateRecord("imsComplaints", form.id, {
+        status: "Investigation",
+        project: form.project,
+        contractor: form.contractor,
+        responsibleParties: form.responsibleParties,
+      });
       setTimeline((current) => [
         {
           title: "Investigation started",
@@ -3355,6 +3424,9 @@ function ImsComplaintWorkspace({
       updateRecord("imsComplaints", form.id, {
         status: "Under Review",
         car: carReference,
+        project: form.project,
+        contractor: form.contractor,
+        responsibleParties: form.responsibleParties,
       });
       setTimeline((current) => [
         {
@@ -3367,12 +3439,25 @@ function ImsComplaintWorkspace({
     }
 
     setStage(4);
+    setNotificationStatus("Sent");
+    setNotificationIssuedAt("Queued after e-sign");
     updateRecord("imsComplaints", form.id, {
       status: "Closed",
       signature: true,
       car: carReference,
+      project: form.project,
+      contractor: form.contractor,
+      responsibleParties: form.responsibleParties,
+      closureNotificationStatus: "Sent",
+      closureNotificationChannel: form.notificationChannel,
+      closureNotificationRecipients: form.notificationRecipients,
+      closureNotificationAt: "Queued after e-sign",
     });
     setTimeline((current) => [
+      {
+        title: "Closure notification issued",
+        meta: timelineStamp(`${form.client} · ${form.notificationChannel}`),
+      },
       {
         title: "E-signature completed and case closed",
         meta: timelineStamp("Monthly quality summary queued for reporting"),
@@ -3384,8 +3469,8 @@ function ImsComplaintWorkspace({
   return (
     <WorkspaceShell
       moduleLabel="IMS - Quality"
-      title="Client complaint / CAR workflow"
-      subtitle="Capture complaint, investigate root cause, issue CAR, and close with electronic signature."
+      title="Client complaint -> CAR -> Closure"
+      subtitle="Capture complaint, investigate root cause, issue CAR, notify client and responsible parties, and close with electronic signature."
       badge={
         stage === 4
           ? "Closed"
@@ -3433,12 +3518,42 @@ function ImsComplaintWorkspace({
                   }
                 />
               </Field>
+              <Field label="Project">
+                <input
+                  className="workspace-input"
+                  value={form.project}
+                  onChange={(event) =>
+                    setForm((current) => ({ ...current, project: event.target.value }))
+                  }
+                />
+              </Field>
+              <Field label="Contractor">
+                <input
+                  className="workspace-input"
+                  value={form.contractor}
+                  onChange={(event) =>
+                    setForm((current) => ({ ...current, contractor: event.target.value }))
+                  }
+                />
+              </Field>
               <Field label="Case owner">
                 <input
                   className="workspace-input"
                   value={form.owner}
                   onChange={(event) =>
                     setForm((current) => ({ ...current, owner: event.target.value }))
+                  }
+                />
+              </Field>
+              <Field label="Responsible parties" wide>
+                <input
+                  className="workspace-input"
+                  value={form.responsibleParties}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      responsibleParties: event.target.value,
+                    }))
                   }
                 />
               </Field>
@@ -3493,7 +3608,42 @@ function ImsComplaintWorkspace({
           <DrawerSection title="Quality controls">
             <div className="workspace-note">
               <p>
-                NCR/CAR route is bound to this complaint, and monthly quality summary will auto-pick up the closed case.
+                NCR/CAR route is bound to this complaint, and monthly quality summary will auto-pick up the closed case with linked project, contractor, and responsible-party context.
+              </p>
+            </div>
+          </DrawerSection>
+          <DrawerSection title="Closure notification">
+            <div className="workspace-form-grid">
+              <Field label="Notification channel">
+                <input
+                  className="workspace-input"
+                  value={form.notificationChannel}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      notificationChannel: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+              <Field label="Recipients" wide>
+                <input
+                  className="workspace-input"
+                  value={form.notificationRecipients}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      notificationRecipients: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+            </div>
+            <div className={`workspace-note ${notificationStatus === "Sent" ? "success" : ""}`}>
+              <p>
+                {notificationStatus === "Sent"
+                  ? `Closure notification sent via ${form.notificationChannel} to ${form.notificationRecipients}.`
+                  : "Closure notification will be released after e-sign close."}
               </p>
             </div>
           </DrawerSection>
@@ -3523,6 +3673,19 @@ function ImsComplaintWorkspace({
                   <span>Open summary</span>
                 </div>
               </button>
+              <button className="workspace-table-row" type="button" onClick={openClosureNotification}>
+                <div>
+                  <p className="workspace-info-title">Closure notification</p>
+                  <p className="workspace-info-detail">
+                    Client notice, responsible parties, and closure issue record
+                  </p>
+                </div>
+                <div className="workspace-info-meta">
+                  <span className={`workspace-badge ${statusClass(notificationStatus)}`}>
+                    {notificationStatus}
+                  </span>
+                </div>
+              </button>
             </div>
           </DrawerSection>
         </div>
@@ -3543,8 +3706,11 @@ function ImsComplaintWorkspace({
               items={[
                 { label: "Severity", value: form.severity },
                 { label: "Source", value: preset.source },
+                { label: "Project", value: form.project },
+                { label: "Contractor", value: form.contractor },
                 { label: "Owner", value: form.owner },
                 { label: "CAR", value: carReference },
+                { label: "Notice", value: notificationStatus },
               ]}
             />
           </DrawerSection>

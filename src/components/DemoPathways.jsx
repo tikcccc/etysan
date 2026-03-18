@@ -63,18 +63,18 @@ export default function DemoPathways() {
     {
       id: "procurement-match",
       module: "Procurement",
-      title: "PR to delivery and three-way match",
+      title: "PR -> PO -> Delivery -> Three-way match",
       detail:
-        "Route requisitions into delivery verification and invoice variance control before QS handover.",
+        "Route PR into PO issue, delivery verification, and three-way match before QS handover.",
       highlights: ["Delivery note / GRN", "Invoice variance", "QS handover"],
     },
     {
       id: "complaint-car",
       module: "IMS",
-      title: "Complaint to CAR closure",
+      title: "Client complaint -> CAR -> Closure",
       detail:
-        "Register complaints, assign investigation, issue CAR, and close with signed records.",
-      highlights: ["Investigator", "Root cause", "E-sign close"],
+        "Capture complaint intake, assign case owner, issue CAR, send closure notification, and close with signed records.",
+      highlights: ["Case owner", "Root cause", "Closure notice"],
     },
     {
       id: "payment-certificate",

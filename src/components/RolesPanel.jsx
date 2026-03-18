@@ -5,7 +5,7 @@ export default function RolesPanel() {
   const { openWorkspace } = useWorkspace();
 
   return (
-    <section className="panel span-5" aria-labelledby="roles-title">
+    <section className="panel span-4" aria-labelledby="roles-title">
       <div className="panel-header">
         <div>
           <p className="panel-label">Approval Roles</p>

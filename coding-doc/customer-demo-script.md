@@ -16,6 +16,15 @@
 - 优先使用首页的 6 张 workflow 卡片进入主故事
 - 当前 demo 为前端状态模拟，不接真实 API / 数据库 / OCR / RFID / NFC
 - 如需恢复初始状态，直接刷新浏览器
+- 主故事标题统一使用：
+  - `Ad-hoc issue closure`
+  - `PR -> PO -> Delivery -> Three-way match`
+  - `Client complaint -> CAR -> Closure`
+- 4 条备用故事里，建议统一使用：
+  - `Environmental permit / CNP lifecycle`
+  - `Certificate upload & renewal`
+  - `New controlled record -> Review -> External share control`
+  - `2-stage incident report`
 
 ## 3. 建议演示顺序
 
@@ -25,7 +34,7 @@
 | 2 | Safety：Toolbox Talk attendance | 3 分钟 | 展示现场高频、mobile-first、100+ attendance 思路 |
 | 3 | Safety：Ad-hoc issue closure | 3 分钟 | 展示现场问题从拍照到关闭的闭环 |
 | 4 | Procurement：PR -> PO -> Delivery -> Three-way match | 4 分钟 | 展示地盘到收货、对账、交 QS 的业务闭环 |
-| 5 | IMS：Complaint -> CAR -> Closure | 3 分钟 | 展示质量闭环和管理 summary hook |
+| 5 | IMS：Client complaint -> CAR -> Closure | 3 分钟 | 展示质量闭环和管理 summary hook |
 | 6 | QS：Payment certificate review | 4 分钟 | 展示商业审批界面、OCR、linked record |
 
 ## 4. 首页统一开场
@@ -229,15 +238,15 @@
 - Three-way match / variance panel
 - QS handover deep link
 
-### 5.5 IMS：Complaint -> CAR -> Closure
+### 5.5 IMS：Client complaint -> CAR -> Closure
 
 入口：
 
-- `Home` -> `Operational workflows` -> `Complaint to CAR closure` -> `Open workflow`
+- `Home` -> `Operational workflows` -> `Client complaint -> CAR -> Closure` -> `Open workflow`
 
 建议操作：
 
-1. 在 `Complaint record` 展示 `Client / Subject / Case owner / Severity`
+1. 在 `Complaint record` 展示 `Client / Subject / Project / Contractor / Case owner / Responsible parties / Severity`
 2. 重点停在 `Root cause` 和 `Corrective action`
 3. 点击 `Start investigation`
 4. 再点击 `Issue CAR`
@@ -261,11 +270,21 @@
 当前 demo 已实现的重要功能：
 
 - Complaint record 表单
-- Investigator / case owner
+- Case owner assignment
+- Project / Contractor / Responsible parties
 - Root cause / corrective action
 - CAR 自动生成引用
+- Closure notification
 - `Close with e-sign`
 - Monthly summary link
+
+本轮已补强的功能点：
+
+- 已补 `project / contractor / responsible parties` 的可见字段
+- 已补 `closure notification` 的可见结果区与 linked record
+- 关闭后可直接向客户说明：
+  - complaint 不只是内部关闭
+  - 相关责任方与 client notice 已纳入同一条质量闭环
 
 ### 5.6 QS：Payment certificate review
 
@@ -313,17 +332,116 @@
 
 ---
 
-## 6. Q&A 时可补充的 supporting 页面
+## 6. Q&A 时可补充的 4 条备用故事
 
-如客户在主故事之后继续追问，可按下面顺序补充：
+下面 4 条建议写成 presenter 的备用脚本。客户一旦追问，就不要只停在模块首页，要直接带进 workflow。
 
-1. Environmental：`Environmental permit and CNP lifecycle`
-2. HR：`Cross-site worker compliance view` / `Upload certificate`
-3. DMS：`Upload / review / share / watermark / external expiry`
-4. Safety：`2-stage incident report`
-5. Plant：`Job sheet / transfer / inspection`
+### 6.1 Environmental：Environmental permit / CNP lifecycle
 
-这些页面的用途是证明系统面不是只有 6 条故事，而是已经具备 supporting module 与 linked workflow。
+入口：
+
+- `Home` / `Sidebar` -> `Environmental`
+- 首屏 `Open CNP lifecycle`
+
+建议操作：
+
+1. 先说明这条备用故事的 flow 是 `Permit -> Inspection -> Training -> Control Pack`
+2. 先停在 permit 页的 `Permit summary` 和 `Renewal controls`
+3. 点击 `Submit renewal` 或 `Confirm renewed permit`
+4. 打开 `Open linked inspection`
+5. 在 inspection 页展示 `Findings and photo evidence`
+6. 回到 `Linked workflow records`，打开 training record
+7. 最后打开 `Open control pack` 或其中任一 DMS record
+
+客户应看到的重点：
+
+- permit 不是单表单，而是和 inspection、training、DMS pack 连在一起
+- 可以解释 `application / authority review / active / renewal`
+- 很适合回答“附件、审批、有效期、整改证据怎么串起来”
+
+### 6.2 HR：Certificate upload & renewal
+
+入口：
+
+- `Home` -> `Operational workflows` -> `Cross-site worker profile`
+- 点击 `Open linked HR profile`
+- 再进入 `Upload certificate`
+
+建议操作：
+
+1. 展示 `Certificate details`
+2. 指给客户看 `Issue date / Expiry date / Reminder window (days) / Verifier`
+3. 点击 `Upload certificate`
+4. 再点击 `Verify & activate reminder`
+5. 回到 worker profile，解释这就是 `Blocked / Flagged / Allowed` 背后的 supporting logic
+
+客户应看到的重点：
+
+- 有扫描件、到期日、提醒窗口、验证人
+- reminder 会同时通知 HR 和现场负责人
+- 这条故事是 worker access control 的支持证据，不是独立 HR 展示而已
+
+### 6.3 DMS：New controlled record -> Review -> External share control
+
+入口：
+
+- `Sidebar` -> `DMS`
+- 首屏 `New controlled record`
+
+建议操作：
+
+1. 在 upload 页展示：
+   - `Library`
+   - `Phase`
+   - `Category`
+   - `Version`
+   - `External access`
+   - `Watermark`
+2. 点击 `Submit for review`
+3. 进入 `Open review workspace`
+4. 在 review 页展示 `Record metadata / Approval routing / External access`
+5. 点击 `Share externally`
+6. 展示 `Recipient / Expiry / Access mode / Watermark`
+7. 点击 `Release secure link`
+
+客户应看到的重点：
+
+- DMS 不只是文件列表，而是 controlled issue workflow
+- OCR、review、watermark、expiry、external share 是串起来的
+- 很适合回答“文件受控发放怎么做”
+
+### 6.4 Safety：2-stage incident report
+
+入口：
+
+- `Home` -> `Operational workflows` -> `Cross-site worker profile`
+- 点击 linked incident record
+
+建议操作：
+
+1. 先停在 `Incident summary`
+2. 展示 `Stage 1 preliminary report`
+3. 再展示 `Stage 2 investigation and close-out`
+4. 点击 `Submit preliminary report`
+5. 再点击 `Close investigation`
+6. 指给客户看 linked：
+   - `Open worker profile`
+   - `Toolbox talk acknowledgement`
+   - `Approval route`
+   - `Incident pack documents`
+
+客户应看到的重点：
+
+- 这是完整的 `preliminary -> RCA -> close-out`
+- incident 不孤立，和 worker、toolbox talk、approval、DMS 都连起来
+- 很适合在客户继续追问 Safety 深度时使用
+
+### 6.5 其他非优先补充
+
+下面这些保留为最后层级补充，不建议在第一轮主动展开：
+
+- Plant：`Job sheet / transfer / inspection`
+- Webmail：`Mailbox / filter / quick reply`
 
 ## 7. 演示时不要主动展开的内容
 

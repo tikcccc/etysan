@@ -1,0 +1,372 @@
+{
+  "doc_dir": "/home/tikhong/etysan/coding-doc",
+  "files_count": 3,
+  "files": [
+    {
+      "file": "/home/tikhong/etysan/coding-doc/customer-demo-script.md",
+      "title": "e-Tysan 客户演示操作说明",
+      "heading_count": 19,
+      "headings": [
+        {
+          "line": 1,
+          "level": 1,
+          "text": "e-Tysan 客户演示操作说明"
+        },
+        {
+          "line": 3,
+          "level": 2,
+          "text": "1. 文档目的"
+        },
+        {
+          "line": 13,
+          "level": 2,
+          "text": "2. 演示前准备"
+        },
+        {
+          "line": 29,
+          "level": 2,
+          "text": "3. 建议演示顺序"
+        },
+        {
+          "line": 40,
+          "level": 2,
+          "text": "4. 首页统一开场"
+        },
+        {
+          "line": 57,
+          "level": 2,
+          "text": "5. 主故事逐条演示"
+        },
+        {
+          "line": 59,
+          "level": 3,
+          "text": "5.1 Safety：Cross-site worker profile"
+        },
+        {
+          "line": 101,
+          "level": 3,
+          "text": "5.2 Safety：Toolbox Talk attendance"
+        },
+        {
+          "line": 140,
+          "level": 3,
+          "text": "5.3 Safety：Ad-hoc issue closure"
+        },
+        {
+          "line": 182,
+          "level": 3,
+          "text": "5.4 Procurement：PR -> PO -> Delivery -> Three-way match"
+        },
+        {
+          "line": 241,
+          "level": 3,
+          "text": "5.5 IMS：Client complaint -> CAR -> Closure"
+        },
+        {
+          "line": 289,
+          "level": 3,
+          "text": "5.6 QS：Payment certificate review"
+        },
+        {
+          "line": 335,
+          "level": 2,
+          "text": "6. Q&A 时可补充的 4 条备用故事"
+        },
+        {
+          "line": 339,
+          "level": 3,
+          "text": "6.1 Environmental：Environmental permit / CNP lifecycle"
+        },
+        {
+          "line": 362,
+          "level": 3,
+          "text": "6.2 HR：Certificate upload & renewal"
+        },
+        {
+          "line": 384,
+          "level": 3,
+          "text": "6.3 DMS：New controlled record -> Review -> External share control"
+        },
+        {
+          "line": 413,
+          "level": 3,
+          "text": "6.4 Safety：2-stage incident report"
+        },
+        {
+          "line": 439,
+          "level": 3,
+          "text": "6.5 其他非优先补充"
+        },
+        {
+          "line": 446,
+          "level": 2,
+          "text": "7. 演示时不要主动展开的内容"
+        }
+      ]
+    },
+    {
+      "file": "/home/tikhong/etysan/coding-doc/demo-feature-list.md",
+      "title": "e-Tysan 当前 Demo 功能清单",
+      "heading_count": 9,
+      "headings": [
+        {
+          "line": 1,
+          "level": 1,
+          "text": "e-Tysan 当前 Demo 功能清单"
+        },
+        {
+          "line": 3,
+          "level": 2,
+          "text": "1. 清单说明"
+        },
+        {
+          "line": 14,
+          "level": 2,
+          "text": "2. 6 条主故事"
+        },
+        {
+          "line": 25,
+          "level": 2,
+          "text": "3. 4 条 Q&A 备用故事"
+        },
+        {
+          "line": 34,
+          "level": 2,
+          "text": "4. 其他非优先补充"
+        },
+        {
+          "line": 45,
+          "level": 2,
+          "text": "5. 产品壳层与共通能力"
+        },
+        {
+          "line": 57,
+          "level": 2,
+          "text": "6. 本轮已补强的重点"
+        },
+        {
+          "line": 66,
+          "level": 2,
+          "text": "7. 参考文档覆盖关系"
+        },
+        {
+          "line": 81,
+          "level": 2,
+          "text": "8. 当前范围边界"
+        }
+      ]
+    },
+    {
+      "file": "/home/tikhong/etysan/coding-doc/prototype-enhancement-plan.md",
+      "title": "e-Tysan 原型对齐与前端 Demo 增强计划",
+      "heading_count": 41,
+      "headings": [
+        {
+          "line": 1,
+          "level": 1,
+          "text": "e-Tysan 原型对齐与前端 Demo 增强计划"
+        },
+        {
+          "line": 3,
+          "level": 2,
+          "text": "1. 本次结论"
+        },
+        {
+          "line": 19,
+          "level": 2,
+          "text": "2. 与 reference-doc 的对齐检查"
+        },
+        {
+          "line": 21,
+          "level": 3,
+          "text": "2.1 客户明确想看的 Demo 场景"
+        },
+        {
+          "line": 37,
+          "level": 3,
+          "text": "2.2 需要修正的判断"
+        },
+        {
+          "line": 52,
+          "level": 2,
+          "text": "3. 这轮 Demo 的范围定义"
+        },
+        {
+          "line": 54,
+          "level": 3,
+          "text": "3.1 明确目标"
+        },
+        {
+          "line": 64,
+          "level": 3,
+          "text": "3.2 明确不做"
+        },
+        {
+          "line": 84,
+          "level": 3,
+          "text": "3.3 演示原则"
+        },
+        {
+          "line": 91,
+          "level": 2,
+          "text": "4. 客户 Demo 主线"
+        },
+        {
+          "line": 95,
+          "level": 3,
+          "text": "4.1 Safety：跨工地 worker profile"
+        },
+        {
+          "line": 116,
+          "level": 3,
+          "text": "4.2 Safety：Toolbox Talk / E-Training Attendance"
+        },
+        {
+          "line": 135,
+          "level": 3,
+          "text": "4.3 Safety：Ad-hoc Issue 现场问题闭环"
+        },
+        {
+          "line": 153,
+          "level": 3,
+          "text": "4.4 Procurement：PR -> PO -> Delivery -> Three-way Match"
+        },
+        {
+          "line": 175,
+          "level": 3,
+          "text": "4.5 IMS：Client Complaint -> CAR -> Closure"
+        },
+        {
+          "line": 196,
+          "level": 3,
+          "text": "4.6 QS：Payment Certificate / OCR Review"
+        },
+        {
+          "line": 216,
+          "level": 3,
+          "text": "4.7 支持型展示，不作为第一轮主故事"
+        },
+        {
+          "line": 232,
+          "level": 2,
+          "text": "5. 界面需要如何更清晰"
+        },
+        {
+          "line": 236,
+          "level": 3,
+          "text": "5.1 一屏只讲一件事"
+        },
+        {
+          "line": 242,
+          "level": 3,
+          "text": "5.2 固定页面骨架"
+        },
+        {
+          "line": 250,
+          "level": 3,
+          "text": "5.3 主按钮只能有一个重点"
+        },
+        {
+          "line": 262,
+          "level": 3,
+          "text": "5.4 状态必须放在首屏"
+        },
+        {
+          "line": 271,
+          "level": 3,
+          "text": "5.5 术语直接对齐文件"
+        },
+        {
+          "line": 283,
+          "level": 3,
+          "text": "5.6 KPI 和卡片要减量"
+        },
+        {
+          "line": 289,
+          "level": 3,
+          "text": "5.7 移动端展示只留给现场场景"
+        },
+        {
+          "line": 299,
+          "level": 3,
+          "text": "5.8 技术能力展示要克制"
+        },
+        {
+          "line": 304,
+          "level": 2,
+          "text": "6. 基于现有 React 原型的落地方式"
+        },
+        {
+          "line": 306,
+          "level": 3,
+          "text": "6.1 不做大重构，直接复用现有框架"
+        },
+        {
+          "line": 321,
+          "level": 3,
+          "text": "6.2 页面与抽屉的使用边界"
+        },
+        {
+          "line": 330,
+          "level": 3,
+          "text": "6.3 数据仍然以场景假资料驱动"
+        },
+        {
+          "line": 343,
+          "level": 3,
+          "text": "6.4 建议新增的只是轻量通用件"
+        },
+        {
+          "line": 355,
+          "level": 2,
+          "text": "7. 修订后的实现优先级"
+        },
+        {
+          "line": 357,
+          "level": 3,
+          "text": "第一阶段：客户 Demo 必须完成"
+        },
+        {
+          "line": 366,
+          "level": 3,
+          "text": "第一阶段补充：支持型页面"
+        },
+        {
+          "line": 373,
+          "level": 3,
+          "text": "第二阶段：Demo 之后再补"
+        },
+        {
+          "line": 379,
+          "level": 2,
+          "text": "8. 这轮 Demo 的验收标准"
+        },
+        {
+          "line": 395,
+          "level": 2,
+          "text": "9. 当前执行进展"
+        },
+        {
+          "line": 397,
+          "level": 3,
+          "text": "9.1 本轮已完成"
+        },
+        {
+          "line": 415,
+          "level": 3,
+          "text": "9.2 这一步实际完成了什么"
+        },
+        {
+          "line": 425,
+          "level": 3,
+          "text": "9.3 下一步收口顺序"
+        },
+        {
+          "line": 431,
+          "level": 2,
+          "text": "10. 总结"
+        }
+      ]
+    }
+  ]
+}

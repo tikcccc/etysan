@@ -33,11 +33,11 @@ export default function ImsPage() {
         <div className="module-main">
           <StorySpotlight
             eyebrow="Complaint lifecycle"
-            title="Client complaint to CAR closure"
-            description="Route complaint intake, investigation, CAR issue, and signed closure in one quality workspace."
-            tags={["Complaint", "Root cause", "CAR"]}
+            title="Client complaint -> CAR -> Closure"
+            description="Route complaint intake, case owner assignment, CAR issue, closure notification, and signed closure in one quality workspace."
+            tags={["Case owner", "Root cause", "Closure notice"]}
             primaryAction={{
-              label: "Open complaint story",
+              label: "Open complaint workflow",
               onClick: () => openComplaintPage(focusComplaint),
             }}
             secondaryAction={{
