@@ -1,13 +1,12 @@
 import { useEffect, useState } from "react";
 import { approvals, notifications, tasks } from "../data/modules.js";
 import {
-  dmsApprovals,
   dmsExternalAccess,
   dmsCategories,
   dmsDocuments,
 } from "../data/dms.js";
 import { hrEmployees, hrInjuries, hrTraining } from "../data/hr.js";
-import { imsComplaints, imsInspections, imsPermits } from "../data/ims.js";
+import { imsComplaints, imsInspections, imsPermits, imsTraining } from "../data/ims.js";
 import {
   plantDisposals,
   plantFleet,
@@ -232,6 +231,196 @@ function findPlantAsset(plantId = "") {
   return {
     ...asset,
     ...(plantAssetPresets[asset.id] || {}),
+  };
+}
+
+function findImsInspectionById(inspectionId = "") {
+  return imsInspections.find((item) => item.id === inspectionId) || imsInspections[0];
+}
+
+function findImsPermitByInspection(inspectionId = "") {
+  return imsPermits.find((item) => item.linkedInspection === inspectionId) || imsPermits[0];
+}
+
+function findImsTrainingByTitle(title = "") {
+  return imsTraining.find((item) => item.title === title) || imsTraining[0];
+}
+
+function environmentalPackDocuments(permit, inspection, training) {
+  return [
+    {
+      id: `ENV-PACK-${permit.id.replace(/[^A-Z0-9]+/gi, "").slice(-8) || "0001"}`,
+      title: `${permit.type} renewal pack`,
+      category: "Approval Letter / Drawing / Consent",
+      phase: "Construction",
+      owner: permit.owner,
+      updated: "Jan 29",
+      status:
+        permit.lifecycleStage === "Active"
+          ? "Approved"
+          : permit.lifecycleStage === "Authority review"
+            ? "Pending"
+            : "Review",
+      type: "PDF",
+      size: "3.8 MB",
+      ocr: true,
+      encrypted: true,
+      externalAccess: "None",
+      library: "Project",
+    },
+    {
+      id: `${inspection.id}-EVD`,
+      title: `${inspection.id} inspection evidence`,
+      category: "Inspection Form / Photos",
+      phase: "Construction",
+      owner: inspection.inspector,
+      updated: "Jan 29",
+      status: inspection.status === "Completed" ? "Approved" : "Review",
+      type: "ZIP",
+      size: "12.6 MB",
+      ocr: true,
+      encrypted: true,
+      externalAccess: "None",
+      library: "Project",
+    },
+    {
+      id: `ENV-TRN-${training.title.replace(/[^A-Z0-9]+/gi, "").slice(0, 6).toUpperCase() || "0001"}`,
+      title: `${training.title} attendance record`,
+      category: "Site Meeting",
+      phase: "Construction",
+      owner: permit.owner,
+      updated: "Jan 28",
+      status: training.date.startsWith("Completed") ? "Approved" : "Pending",
+      type: "PDF",
+      size: "1.6 MB",
+      ocr: true,
+      encrypted: true,
+      externalAccess: "None",
+      library: "Project",
+    },
+  ];
+}
+
+function findSafetyWorkerById(workerId = "", workerName = "") {
+  return (
+    workers.find((item) => item.id === workerId) ||
+    workers.find((item) => item.name === workerName) ||
+    workers[0]
+  );
+}
+
+function findApprovalById(approvalId = "") {
+  return approvals.find((item) => item.id === approvalId) || approvals[2] || approvals[0];
+}
+
+function safetyIncidentDocuments(record, stage, worker) {
+  return [
+    {
+      id: `${record.ref}-P1`,
+      title: `${record.ref} preliminary report`,
+      category: "Incident Report",
+      phase: "Construction",
+      owner: record.reportedBy,
+      updated: "Jan 29",
+      status: stage >= 2 ? "Approved" : "Review",
+      type: "PDF",
+      size: "1.8 MB",
+      ocr: true,
+      encrypted: true,
+      externalAccess: "None",
+      library: "Safety",
+    },
+    {
+      id: `${record.ref}-EVD`,
+      title: `${record.ref} photo evidence pack`,
+      category: "Inspection Form / Photos",
+      phase: "Construction",
+      owner: worker.name,
+      updated: "Jan 29",
+      status: stage >= 3 ? "Approved" : stage >= 2 ? "Review" : "Pending",
+      type: "ZIP",
+      size: "12.4 MB",
+      ocr: true,
+      encrypted: true,
+      externalAccess: "None",
+      library: "Safety",
+    },
+    {
+      id: `${record.ref}-TT`,
+      title: record.linkedTraining || `${record.ref} corrective toolbox talk`,
+      category: "Site Meeting",
+      phase: "Construction",
+      owner: record.investigator,
+      updated: "Jan 30",
+      status: stage >= 3 ? "Approved" : "Pending",
+      type: "PDF",
+      size: "1.3 MB",
+      ocr: true,
+      encrypted: true,
+      externalAccess: "None",
+      library: "Safety",
+    },
+  ];
+}
+
+function resolveGeneratedDocuments(resolveRecord, documents = []) {
+  return documents.map((doc) => resolveRecord?.("dmsDocuments", doc) || doc);
+}
+
+function dmsReviewContext(doc, source, status) {
+  const normalizedStatus = String(status || "").toLowerCase();
+  const reviewerStatus = normalizedStatus === "approved" ? "Complete" : "In review";
+  const approverStatus = normalizedStatus === "approved" ? "Approved" : "Pending";
+  const issueStatus = normalizedStatus === "approved" ? "Ready" : "Pending";
+  const isSafetyRecord =
+    source?.module === "Safety" || doc.library === "Safety" || doc.category === "Incident Report";
+  const isEnvironmentalRecord =
+    doc.title.toLowerCase().includes("renewal pack") ||
+    doc.title.toLowerCase().includes("inspection evidence") ||
+    doc.title.toLowerCase().includes("attendance record");
+
+  if (isSafetyRecord) {
+    return {
+      subtitle: "Controlled review of incident pack metadata, routing, and external access.",
+      routeMeta: source?.title
+        ? `Safety workflow · ${source.title}`
+        : "Safety Manager -> Project Director",
+      approvalSteps: [
+        { step: "Owner", name: doc.owner, status: "Complete" },
+        {
+          step: "Reviewer",
+          name: source?.owner || "Safety Manager",
+          status: reviewerStatus,
+        },
+        { step: "Approver", name: "Project Director", status: approverStatus },
+        { step: "Issue", name: "Safety DMS", status: issueStatus },
+      ],
+    };
+  }
+
+  if (isEnvironmentalRecord) {
+    return {
+      subtitle:
+        "Controlled review of environmental pack metadata, routing, and external access.",
+      routeMeta: "Environmental Manager -> Project Director",
+      approvalSteps: [
+        { step: "Owner", name: doc.owner, status: "Complete" },
+        { step: "Reviewer", name: "Environmental Manager", status: reviewerStatus },
+        { step: "Approver", name: "Project Director", status: approverStatus },
+        { step: "Issue", name: "Project DMS", status: issueStatus },
+      ],
+    };
+  }
+
+  return {
+    subtitle: "Controlled review of record metadata, routing, and external access.",
+    routeMeta: source?.title ? `${source.module} workflow · ${source.title}` : "QS Team -> Director",
+    approvalSteps: [
+      { step: "Requester", name: "Project Team", status: "Complete" },
+      { step: "Reviewer", name: "QS Team", status: reviewerStatus },
+      { step: "Approver", name: "Director", status: approverStatus },
+      { step: "Issue", name: "Project DMS", status: issueStatus },
+    ],
   };
 }
 
@@ -478,7 +667,7 @@ function NotificationCenterWorkspace({
         openPageWorkspace?.(
           "imsInspection",
           { record: resolveRecord("imsInspections", imsInspections[0]) },
-          "ims"
+          "environmental"
         );
         return;
       case "Project DMS":
@@ -874,6 +1063,7 @@ function DmsReviewWorkspace({
 }) {
   const doc = payload.record;
   const [status, setStatus] = useState(doc.status);
+  const reviewContext = dmsReviewContext(doc, payload.source, status);
   const [timeline, setTimeline] = useState([
     {
       title: "OCR and metadata indexing completed",
@@ -881,7 +1071,7 @@ function DmsReviewWorkspace({
     },
     {
       title: "Review route assigned",
-      meta: timelineStamp("QS Team -> Director"),
+      meta: timelineStamp(dmsReviewContext(doc, payload.source, doc.status).routeMeta),
     },
     {
       title: "External share policy enforced",
@@ -949,7 +1139,7 @@ function DmsReviewWorkspace({
     <WorkspaceShell
       moduleLabel="Document Management"
       title={doc.title}
-      subtitle="Controlled review of record metadata, routing, and external access."
+      subtitle={reviewContext.subtitle}
       badge={status}
       badgeTone={statusClass(status)}
       footer={footer}
@@ -989,7 +1179,7 @@ function DmsReviewWorkspace({
         <div className="workspace-stack">
           <DrawerSection title="Approval routing">
             <div className="workspace-approval-list">
-              {dmsApprovals.map((step) => (
+              {reviewContext.approvalSteps.map((step) => (
                 <div key={step.step} className="workspace-approval-row">
                   <div>
                     <strong>{step.step}</strong>
@@ -1025,14 +1215,15 @@ function DmsReviewWorkspace({
 }
 
 function DmsUploadWorkspace({ closeWorkspace, openPageWorkspace, payload, surface }) {
+  const prefill = payload?.prefill || {};
   const [form, setForm] = useState({
-    title: "Safety inspection evidence pack",
-    category: dmsCategories[9]?.name || "Inspection Form / Photos",
-    phase: "Construction",
-    owner: "S. Ahmed",
+    title: prefill.title || "Safety inspection evidence pack",
+    category: prefill.category || dmsCategories[9]?.name || "Inspection Form / Photos",
+    phase: prefill.phase || "Construction",
+    owner: prefill.owner || "S. Ahmed",
     library: payload?.library || "Project DMS",
-    version: "Rev A",
-    access: "Internal review",
+    version: prefill.version || "Rev A",
+    access: prefill.access || "Internal review",
     watermark: "Enabled",
   });
   const [submitted, setSubmitted] = useState(false);
@@ -1337,13 +1528,20 @@ function DmsShareWorkspace({ closeWorkspace, payload }) {
   );
 }
 
-function SafetyInspectionWorkspace({ closeWorkspace, payload, surface }) {
+function SafetyInspectionWorkspace({
+  closeWorkspace,
+  openPageWorkspace,
+  payload,
+  surface,
+}) {
   const inspection = payload.record || {
     id: "PAT-219",
     title: "Tower crane pre-start checklist",
     zone: "Zone B",
     due: "2026-01-29 16:00",
   };
+  const safetyApproval =
+    approvals.find((item) => item.module === "Safety") || approvals[0];
   const [stage, setStage] = useState(1);
   const [form, setForm] = useState({
     severity: "Serious",
@@ -1361,6 +1559,10 @@ function SafetyInspectionWorkspace({ closeWorkspace, payload, surface }) {
 
   const actionLabel =
     stage === 1 ? "Assign issue" : stage === 2 ? "Record rectification" : "Verify close";
+
+  function openEscalationRoute() {
+    openPageWorkspace("approvalRecord", { record: safetyApproval }, "safety");
+  }
 
   function advance() {
     if (stage === 1) {
@@ -1527,6 +1729,23 @@ function SafetyInspectionWorkspace({ closeWorkspace, payload, surface }) {
               </div>
             </DrawerSection>
           ) : null}
+          <DrawerSection title="Linked workflow records">
+            <div className="workspace-table-list">
+              <button className="workspace-table-row" type="button" onClick={openEscalationRoute}>
+                <div>
+                  <p className="workspace-info-title">{safetyApproval.title}</p>
+                  <p className="workspace-info-detail">
+                    {safetyApproval.id} · escalation and management acknowledgement
+                  </p>
+                </div>
+                <div className="workspace-info-meta">
+                  <span className={`workspace-badge ${statusClass(safetyApproval.status)}`}>
+                    {safetyApproval.status}
+                  </span>
+                </div>
+              </button>
+            </div>
+          </DrawerSection>
           <DrawerSection title="Audit trail">
             <Timeline items={timeline} />
           </DrawerSection>
@@ -1538,42 +1757,114 @@ function SafetyInspectionWorkspace({ closeWorkspace, payload, surface }) {
 
 function SafetyIncidentWorkspace({
   closeWorkspace,
+  openPageWorkspace,
   payload,
+  resolveRecord,
   surface,
   updateRecord,
 }) {
-  const record = payload.record || incidents[0];
+  const recordSeed = payload.record || incidents[0];
+  const record = resolveRecord?.("safetyIncidents", recordSeed) || recordSeed;
+  const worker = findSafetyWorkerById(record.workerId, record.workerName);
+  const employee = enrichHrEmployee(
+    findHrEmployeeByName(worker.name) || { employee: worker.name }
+  );
+  const approvalSeed = payload.source || findApprovalById(record.linkedApproval);
+  const approval = resolveRecord?.("approvals", approvalSeed) || approvalSeed;
+  const injuryWatch = hrInjuries[0];
   const [stage, setStage] = useState(record.stage || 1);
   const [preliminary, setPreliminary] = useState({
-    type: "Minor Injury",
-    location: "Site A - Zone 3",
-    occurredAt: "2026-01-29 10:15",
-    immediateAction: "Area isolated and first aid completed.",
+    type: record.type || "Minor injury",
+    severity: record.severity || "High",
+    location: record.location || "Site A - Zone 3",
+    occurredAt: record.occurredAt || `${record.date} 10:15`,
+    reportedBy: record.reportedBy || "Safety Officer Chan",
+    subcontractor: record.subcontractor || "East Harbor Steelworks",
+    immediateAction:
+      record.immediateAction || "Area isolated and first aid completed.",
   });
   const [investigation, setInvestigation] = useState({
-    rootCause: "Temporary access route was not segregated from lifting path.",
-    correctiveAction: "Reissue access route, update toolbox talk, and add barricade.",
-    owner: "Site Safety Manager",
-    dueDate: "2026-02-01",
+    rootCause:
+      record.rootCause ||
+      "Temporary access route was not segregated from lifting path.",
+    correctiveAction:
+      record.correctiveAction ||
+      "Reissue access route, update toolbox talk, and add barricade.",
+    owner: record.investigator || "Site Safety Manager",
+    dueDate: record.dueDate || "2026-02-01",
+    nextAction:
+      record.nextAction || "Collect witness statements and close the RCA route.",
   });
-  const [timeline, setTimeline] = useState([
-    {
-      title: "Incident record created",
-      meta: timelineStamp(record.ref),
-    },
-  ]);
+  const packDocuments = resolveGeneratedDocuments(
+    resolveRecord,
+    safetyIncidentDocuments(record, stage, worker)
+  );
+  const [timeline, setTimeline] = useState(() => {
+    const items = [
+      {
+        title: "Safety incident workspace opened",
+        meta: timelineStamp(`${record.ref} · ${record.site}`),
+      },
+      {
+        title: "Linked worker profile and approval route resolved",
+        meta: timelineStamp(`${worker.name} · ${approval.id}`),
+      },
+    ];
+
+    if ((record.stage || 1) >= 2) {
+      items.unshift({
+        title: "Preliminary report submitted",
+        meta: timelineStamp(
+          `${record.occurredAt || preliminary.occurredAt} · ${record.reportedBy || preliminary.reportedBy}`
+        ),
+      });
+    }
+
+    if ((record.stage || 1) >= 3) {
+      items.unshift({
+        title: "Investigation closed with RCA",
+        meta: timelineStamp(
+          `${record.investigator || investigation.owner} · Corrective briefing routed`
+        ),
+      });
+    }
+
+    return items;
+  });
+
+  function openWorkerProfile() {
+    openPageWorkspace("safetyWorkerProfile", { record: worker }, "safety");
+  }
+
+  function openAttendance() {
+    openPageWorkspace("safetyAttendance", {}, "safety");
+  }
+
+  function openApprovalRoute() {
+    openPageWorkspace("approvalRecord", { record: approval }, "safety");
+  }
 
   function submitStage() {
     if (stage === 1) {
       setStage(2);
-      updateRecord("safetyIncidents", record.ref, { stage: 2 });
-      if (payload.source?.id) {
-        updateRecord("approvals", payload.source.id, { status: "Review" });
-      }
+      updateRecord("safetyIncidents", record.ref, {
+        immediateAction: preliminary.immediateAction,
+        location: preliminary.location,
+        nextAction: "Investigation owner to confirm RCA and corrective action.",
+        occurredAt: preliminary.occurredAt,
+        reportedBy: preliminary.reportedBy,
+        severity: preliminary.severity,
+        stage: 2,
+        subcontractor: preliminary.subcontractor,
+        type: preliminary.type,
+      });
+      updateRecord("approvals", approval.id, { status: "Review" });
       setTimeline((current) => [
         {
           title: "Preliminary report submitted",
-          meta: timelineStamp(preliminary.occurredAt),
+          meta: timelineStamp(
+            `${preliminary.occurredAt} · Routed by ${preliminary.reportedBy}`
+          ),
         },
         ...current,
       ]);
@@ -1581,14 +1872,21 @@ function SafetyIncidentWorkspace({
     }
 
     setStage(3);
-    updateRecord("safetyIncidents", record.ref, { stage: 3 });
-    if (payload.source?.id) {
-      updateRecord("approvals", payload.source.id, { status: "Approved" });
-    }
+    updateRecord("safetyIncidents", record.ref, {
+      correctiveAction: investigation.correctiveAction,
+      dueDate: investigation.dueDate,
+      investigator: investigation.owner,
+      nextAction: investigation.nextAction,
+      rootCause: investigation.rootCause,
+      stage: 3,
+    });
+    updateRecord("approvals", approval.id, { status: "Approved" });
     setTimeline((current) => [
       {
         title: "Investigation closed with RCA",
-        meta: timelineStamp(investigation.owner),
+        meta: timelineStamp(
+          `${investigation.owner} · Corrective briefing linked to DMS pack`
+        ),
       },
       ...current,
     ]);
@@ -1597,27 +1895,51 @@ function SafetyIncidentWorkspace({
   return (
     <WorkspaceShell
       moduleLabel="Safety"
-      title="Incident record"
-      subtitle={record.ref}
+      title={record.title}
+      subtitle={`${record.ref} · ${record.site}`}
       badge={stage === 3 ? "Closed" : stage === 2 ? "Investigation" : "Preliminary"}
       badgeTone={stage === 3 ? "approved" : stage === 2 ? "review" : "urgent"}
       footer={
-        <button
-          className="primary-button"
-          type="button"
-          onClick={stage === 3 ? closeWorkspace : submitStage}
-        >
-          {stage === 1
-            ? "Submit preliminary"
-            : stage === 2
-              ? "Close investigation"
-              : closeActionLabel(surface)}
-        </button>
+        <>
+          <button className="ghost-button" type="button" onClick={openWorkerProfile}>
+            Open worker profile
+          </button>
+          <button className="secondary-button" type="button" onClick={openApprovalRoute}>
+            Open approval route
+          </button>
+          <button
+            className="primary-button"
+            type="button"
+            onClick={stage === 3 ? closeWorkspace : submitStage}
+          >
+            {stage === 1
+              ? "Submit preliminary report"
+              : stage === 2
+                ? "Close investigation"
+                : closeActionLabel(surface)}
+          </button>
+        </>
       }
     >
       <div className="workspace-content-grid">
         <div className="workspace-stack">
-          <DrawerSection title="Preliminary report">
+          <DrawerSection title="Incident summary" subtitle={`${record.ref} · ${record.site}`}>
+            <MetaGrid
+              items={[
+                { label: "Incident type", value: preliminary.type },
+                { label: "Severity", value: preliminary.severity },
+                { label: "Affected worker", value: worker.name },
+                { label: "Subcontractor", value: preliminary.subcontractor },
+                { label: "Reported by", value: preliminary.reportedBy },
+                { label: "Next action", value: stage === 3 ? "Archive to DMS" : investigation.nextAction },
+              ]}
+            />
+          </DrawerSection>
+
+          <DrawerSection
+            title="Stage 1 preliminary report"
+            subtitle="Capture first report details, immediate action, and affected worker before RCA."
+          >
             <div className="workspace-form-grid">
               <Field label="Incident type">
                 <input
@@ -1630,6 +1952,22 @@ function SafetyIncidentWorkspace({
                     }))
                   }
                 />
+              </Field>
+              <Field label="Severity">
+                <select
+                  className="workspace-select"
+                  value={preliminary.severity}
+                  onChange={(event) =>
+                    setPreliminary((current) => ({
+                      ...current,
+                      severity: event.target.value,
+                    }))
+                  }
+                >
+                  <option>Low</option>
+                  <option>Medium</option>
+                  <option>High</option>
+                </select>
               </Field>
               <Field label="Location">
                 <input
@@ -1655,6 +1993,33 @@ function SafetyIncidentWorkspace({
                   }
                 />
               </Field>
+              <Field label="Reported by">
+                <input
+                  className="workspace-input"
+                  value={preliminary.reportedBy}
+                  onChange={(event) =>
+                    setPreliminary((current) => ({
+                      ...current,
+                      reportedBy: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+              <Field label="Affected worker">
+                <input className="workspace-input" value={`${worker.name} · ${worker.id}`} readOnly />
+              </Field>
+              <Field label="Subcontractor" wide>
+                <input
+                  className="workspace-input"
+                  value={preliminary.subcontractor}
+                  onChange={(event) =>
+                    setPreliminary((current) => ({
+                      ...current,
+                      subcontractor: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
               <Field label="Immediate action" wide>
                 <textarea
                   className="workspace-textarea"
@@ -1670,7 +2035,11 @@ function SafetyIncidentWorkspace({
               </Field>
             </div>
           </DrawerSection>
-          <DrawerSection title="Investigation and RCA">
+
+          <DrawerSection
+            title="Stage 2 investigation and close-out"
+            subtitle="Complete RCA, corrective action, and case owner before closure."
+          >
             <div className="workspace-form-grid">
               <Field label="Root cause" wide>
                 <textarea
@@ -1723,30 +2092,113 @@ function SafetyIncidentWorkspace({
                   }
                 />
               </Field>
+              <Field label="Next action" wide>
+                <input
+                  className="workspace-input"
+                  value={investigation.nextAction}
+                  onChange={(event) =>
+                    setInvestigation((current) => ({
+                      ...current,
+                      nextAction: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+            </div>
+          </DrawerSection>
+
+          <DrawerSection title="Linked workflow records">
+            <div className="workspace-table-list">
+              <button className="workspace-table-row" type="button" onClick={openWorkerProfile}>
+                <div>
+                  <p className="workspace-info-title">{worker.name}</p>
+                  <p className="workspace-info-detail">
+                    Cross-site worker profile, certificates, and transfer history
+                  </p>
+                </div>
+                <div className="workspace-info-meta">
+                  <span className={`workspace-badge ${statusClass(worker.accessStatus)}`}>
+                    {worker.accessStatus}
+                  </span>
+                </div>
+              </button>
+              <button className="workspace-table-row" type="button" onClick={openAttendance}>
+                <div>
+                  <p className="workspace-info-title">{record.linkedTraining}</p>
+                  <p className="workspace-info-detail">
+                    Toolbox talk acknowledgement for corrective briefing
+                  </p>
+                </div>
+                <div className="workspace-info-meta">
+                  <span>Sync training</span>
+                </div>
+              </button>
+              <button className="workspace-table-row" type="button" onClick={openApprovalRoute}>
+                <div>
+                  <p className="workspace-info-title">{approval.title}</p>
+                  <p className="workspace-info-detail">
+                    {approval.id} · management review and signed close-out
+                  </p>
+                </div>
+                <div className="workspace-info-meta">
+                  <span className={`workspace-badge ${statusClass(approval.status)}`}>
+                    {approval.status}
+                  </span>
+                </div>
+              </button>
             </div>
           </DrawerSection>
         </div>
         <div className="workspace-stack">
-          <DrawerSection title="Workflow">
+          <DrawerSection title="Two-stage lifecycle">
             <StepRail
               current={stage - 1}
               steps={[
-                { label: "Preliminary", detail: "Initial record" },
-                { label: "Investigation", detail: "Management review" },
-                { label: "Closed", detail: "RCA signed" },
+                { label: "Preliminary report", detail: "Initial record and immediate action" },
+                { label: "Investigation / RCA", detail: "Owner, root cause, corrective action" },
+                { label: "Closed", detail: "Signed and linked to DMS" },
               ]}
             />
           </DrawerSection>
-          <DrawerSection title="Case summary">
+
+          <DrawerSection title="Case governance">
             <MetaGrid
               items={[
                 { label: "Reference", value: record.ref },
-                { label: "Title", value: record.title },
-                { label: "Status", value: stage === 3 ? "Closed" : "Open" },
+                { label: "Worker profile", value: employee.id },
+                { label: "Approval status", value: approval.status },
+                { label: "EC / insurer", value: stage === 3 ? "Filed" : injuryWatch.status },
+                { label: "Corrective briefing", value: record.linkedTraining },
                 { label: "Manager alert", value: "Triggered" },
               ]}
             />
           </DrawerSection>
+
+          <DrawerSection title="Incident pack documents">
+            <div className="workspace-table-list">
+              {packDocuments.map((doc) => (
+                <button
+                  key={doc.id}
+                  className="workspace-table-row"
+                  type="button"
+                  onClick={() =>
+                    openPageWorkspace("dmsReview", { record: doc, source: approval }, "dms")
+                  }
+                >
+                  <div>
+                    <p className="workspace-info-title">{doc.title}</p>
+                    <p className="workspace-info-detail">{doc.id} · {doc.category}</p>
+                  </div>
+                  <div className="workspace-info-meta">
+                    <span className={`workspace-badge ${statusClass(doc.status)}`}>
+                      {doc.status}
+                    </span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </DrawerSection>
+
           <DrawerSection title="Audit trail">
             <Timeline items={timeline} />
           </DrawerSection>
@@ -1756,7 +2208,17 @@ function SafetyIncidentWorkspace({
   );
 }
 
-function SafetyAttendanceWorkspace({ closeWorkspace, surface }) {
+function SafetyAttendanceWorkspace({
+  closeWorkspace,
+  openPageWorkspace,
+  surface,
+}) {
+  const [session, setSession] = useState({
+    topic: "Lifting route segregation",
+    date: "2026-01-30 07:00",
+    site: "West Kowloon Rail Extension",
+    trainer: "Safety Officer Chan",
+  });
   const [mode, setMode] = useState("Tap card");
   const [sessionState, setSessionState] = useState("Ready");
   const [roster, setRoster] = useState(
@@ -1765,7 +2227,46 @@ function SafetyAttendanceWorkspace({ closeWorkspace, surface }) {
       present: index === 0,
     }))
   );
+  const [timeline, setTimeline] = useState([
+    {
+      title: "Toolbox talk workspace opened",
+      meta: timelineStamp(`${session.topic} · ${session.site}`),
+    },
+  ]);
   const presentCount = roster.filter((worker) => worker.present).length;
+  const syncedWorker = roster.find((worker) => worker.present) || roster[0];
+
+  function advanceSession() {
+    if (sessionState === "Ready") {
+      setSessionState("Live");
+      setTimeline((current) => [
+        {
+          title: "Attendance session started",
+          meta: timelineStamp(`${session.date} · ${mode}`),
+        },
+        ...current,
+      ]);
+      return;
+    }
+
+    if (sessionState === "Live") {
+      setSessionState("Synced");
+      setTimeline((current) => [
+        {
+          title: "Attendance synced to worker profile and training record",
+          meta: timelineStamp(`${presentCount} workers confirmed`),
+        },
+        ...current,
+      ]);
+      return;
+    }
+
+    closeWorkspace();
+  }
+
+  function openWorkerProfile() {
+    openPageWorkspace("safetyWorkerProfile", { record: syncedWorker }, "safety");
+  }
 
   return (
     <WorkspaceShell
@@ -1778,13 +2279,7 @@ function SafetyAttendanceWorkspace({ closeWorkspace, surface }) {
         <button
           className="primary-button"
           type="button"
-          onClick={() =>
-            sessionState === "Synced"
-              ? closeWorkspace()
-              : setSessionState((current) =>
-                  current === "Ready" ? "Live" : current === "Live" ? "Synced" : "Synced"
-                )
-          }
+          onClick={advanceSession}
         >
           {sessionState === "Ready"
             ? "Start session"
@@ -1799,10 +2294,31 @@ function SafetyAttendanceWorkspace({ closeWorkspace, surface }) {
           <DrawerSection title="Session setup">
             <div className="workspace-form-grid">
               <Field label="Topic">
-                <input className="workspace-input" defaultValue="Lifting route segregation" />
+                <input
+                  className="workspace-input"
+                  value={session.topic}
+                  onChange={(event) =>
+                    setSession((current) => ({ ...current, topic: event.target.value }))
+                  }
+                />
+              </Field>
+              <Field label="Date">
+                <input
+                  className="workspace-input"
+                  value={session.date}
+                  onChange={(event) =>
+                    setSession((current) => ({ ...current, date: event.target.value }))
+                  }
+                />
               </Field>
               <Field label="Site">
-                <input className="workspace-input" defaultValue="West Kowloon Rail Extension" />
+                <input
+                  className="workspace-input"
+                  value={session.site}
+                  onChange={(event) =>
+                    setSession((current) => ({ ...current, site: event.target.value }))
+                  }
+                />
               </Field>
               <Field label="Attendance mode">
                 <select
@@ -1815,7 +2331,13 @@ function SafetyAttendanceWorkspace({ closeWorkspace, surface }) {
                 </select>
               </Field>
               <Field label="Trainer">
-                <input className="workspace-input" defaultValue="Safety Officer Chan" />
+                <input
+                  className="workspace-input"
+                  value={session.trainer}
+                  onChange={(event) =>
+                    setSession((current) => ({ ...current, trainer: event.target.value }))
+                  }
+                />
               </Field>
             </div>
           </DrawerSection>
@@ -1848,15 +2370,47 @@ function SafetyAttendanceWorkspace({ closeWorkspace, surface }) {
           </DrawerSection>
         </div>
         <div className="workspace-stack">
+          <DrawerSection title="Workflow">
+            <StepRail
+              current={sessionState === "Ready" ? 0 : sessionState === "Live" ? 1 : 2}
+              steps={[
+                { label: "Session setup", detail: "Topic, date, site, trainer" },
+                { label: "Attendance capture", detail: "Tap card or manual mode" },
+                { label: "Training sync", detail: "Worker profile updated" },
+              ]}
+            />
+          </DrawerSection>
           <DrawerSection title="Attendance summary">
             <MetaGrid
               items={[
+                { label: "Topic", value: session.topic },
+                { label: "Date", value: session.date },
                 { label: "Method", value: mode },
                 { label: "Present", value: `${presentCount} workers` },
                 { label: "Fallback", value: "Search by ID or phone" },
                 { label: "Sync target", value: "HR + Safety records" },
               ]}
             />
+          </DrawerSection>
+          <DrawerSection title="Linked workflow records">
+            <div className="workspace-table-list">
+              <button className="workspace-table-row" type="button" onClick={openWorkerProfile}>
+                <div>
+                  <p className="workspace-info-title">{syncedWorker.name}</p>
+                  <p className="workspace-info-detail">
+                    Worker profile, training history, and gate access note
+                  </p>
+                </div>
+                <div className="workspace-info-meta">
+                  <span className={`workspace-badge ${statusClass(syncedWorker.accessStatus)}`}>
+                    {syncedWorker.accessStatus}
+                  </span>
+                </div>
+              </button>
+            </div>
+          </DrawerSection>
+          <DrawerSection title="Audit trail">
+            <Timeline items={timeline} />
           </DrawerSection>
         </div>
       </div>
@@ -1873,6 +2427,9 @@ function SafetyWorkerProfileWorkspace({
   const worker = payload.record || workers[0];
   const employee = enrichHrEmployee(findHrEmployeeByName(worker.name) || { employee: worker.name });
   const trainingRecords = hrTraining.filter((record) => record.employee === employee.name);
+  const linkedIncident =
+    incidents.find((item) => item.workerId === worker.id || item.workerName === worker.name) ||
+    incidents[0];
   const accessResult =
     worker.accessStatus === "Denied"
       ? "Blocked"
@@ -1985,39 +2542,62 @@ function SafetyWorkerProfileWorkspace({
         </div>
 
         <div className="workspace-stack">
-          <DrawerSection title="Cross-site history">
-            <Timeline
-              items={[
-                ...employee.transfers.map((item) => ({
-                  title: item,
-                  meta: timelineStamp(employee.name),
-                })),
-                ...timeline,
+          <DrawerSection title="Workflow">
+            <StepRail
+              current={2}
+              steps={[
+                { label: "Scan card / search ID", detail: "Gate lookup" },
+                { label: "Load Site A history", detail: "Training and incident sync" },
+                { label: "Gate decision", detail: accessResult },
               ]}
             />
           </DrawerSection>
-          <DrawerSection title="Linked modules">
-            <div className="workspace-list">
-              <div className="workspace-list-row">
+          <DrawerSection title="Site transfer history">
+            <Timeline
+              items={employee.transfers.map((item) => ({
+                title: item,
+                meta: timelineStamp(employee.name),
+              }))}
+            />
+          </DrawerSection>
+          <DrawerSection title="Linked workflow records">
+            <div className="workspace-table-list">
+              <button
+                className="workspace-table-row"
+                type="button"
+                onClick={() => openPageWorkspace("hrProfile", { record: employee }, "hr")}
+              >
                 <div>
-                  <strong>Safety records</strong>
-                  <span>Incident history, gate access rules, and toolbox talk attendance</span>
+                  <p className="workspace-info-title">{employee.name}</p>
+                  <p className="workspace-info-detail">
+                    HR profile with certificates, payroll identity, and transfer history
+                  </p>
                 </div>
-                <span>Modulus E</span>
-              </div>
-              <div className="workspace-list-row">
+                <div className="workspace-info-meta">
+                  <span>{employee.id}</span>
+                </div>
+              </button>
+              <button
+                className="workspace-table-row"
+                type="button"
+                onClick={() => openPageWorkspace("safetyIncident", { record: linkedIncident }, "safety")}
+              >
                 <div>
-                  <strong>HR profile</strong>
-                  <span>Certificates, payroll identity, and transfer history</span>
+                  <p className="workspace-info-title">{linkedIncident.ref}</p>
+                  <p className="workspace-info-detail">
+                    Site A incident history, corrective action, and toolbox talk linkage
+                  </p>
                 </div>
-                <span>Modulus J</span>
-              </div>
+                <div className="workspace-info-meta">
+                  <span className={`workspace-badge ${statusClass(linkedIncident.stage >= 3 ? "Closed" : "Investigation")}`}>
+                    {linkedIncident.stage >= 3 ? "Closed" : "Investigation"}
+                  </span>
+                </div>
+              </button>
             </div>
           </DrawerSection>
-          <DrawerSection title="Access note">
-            <div className="workspace-note">
-              <p>Worker history is loaded from the centralized worker database, so the safety officer can review Site A records instantly on the first day at Site B.</p>
-            </div>
+          <DrawerSection title="Gate decision audit">
+            <Timeline items={timeline} />
           </DrawerSection>
         </div>
       </div>
@@ -2701,7 +3281,13 @@ function HrCertificateWorkspace({ closeWorkspace, payload, surface, updateRecord
   );
 }
 
-function ImsComplaintWorkspace({ closeWorkspace, payload, surface, updateRecord }) {
+function ImsComplaintWorkspace({
+  closeWorkspace,
+  openWorkspace,
+  payload,
+  surface,
+  updateRecord,
+}) {
   const sourceRecord = payload.record || imsComplaints[1];
   const preset = imsComplaintPresets[sourceRecord.id] || imsComplaintPresets["CMP-25-004"];
   const [stage, setStage] = useState(
@@ -2723,6 +3309,32 @@ function ImsComplaintWorkspace({ closeWorkspace, payload, surface, updateRecord 
       meta: timelineStamp(`${form.id} · ${form.client}`),
     },
   ]);
+  const carReference = `CAR-${form.id.slice(-3)}`;
+
+  function openMonthlySummary() {
+    openWorkspace("infoBoard", {
+      moduleLabel: "IMS - Quality",
+      title: "Monthly quality summary",
+      subtitle: "Trend hook for complaint closure, CAR issue, and signed cases.",
+      badge: "Monthly",
+      sections: [
+        {
+          title: "Complaint trend",
+          items: imsComplaints.slice(0, 4).map((row) => ({
+            title: row.subject,
+            detail: `${row.id} · ${row.client}`,
+            meta: row.status,
+            badge: row.signature ? "Signed" : row.status,
+            badgeTone: row.signature
+              ? "approved"
+              : row.status === "Investigation"
+                ? "warning"
+                : "review",
+          })),
+        },
+      ],
+    });
+  }
 
   function advance() {
     if (stage === 1) {
@@ -2742,7 +3354,7 @@ function ImsComplaintWorkspace({ closeWorkspace, payload, surface, updateRecord 
       setStage(3);
       updateRecord("imsComplaints", form.id, {
         status: "Under Review",
-        car: `CAR-${form.id.slice(-3)}`,
+        car: carReference,
       });
       setTimeline((current) => [
         {
@@ -2758,7 +3370,7 @@ function ImsComplaintWorkspace({ closeWorkspace, payload, surface, updateRecord 
     updateRecord("imsComplaints", form.id, {
       status: "Closed",
       signature: true,
-      car: `CAR-${form.id.slice(-3)}`,
+      car: carReference,
     });
     setTimeline((current) => [
       {
@@ -2885,6 +3497,34 @@ function ImsComplaintWorkspace({ closeWorkspace, payload, surface, updateRecord 
               </p>
             </div>
           </DrawerSection>
+          <DrawerSection title="Linked workflow records">
+            <div className="workspace-table-list">
+              <div className="workspace-table-row">
+                <div>
+                  <p className="workspace-info-title">{carReference}</p>
+                  <p className="workspace-info-detail">
+                    Corrective action request auto-generated from complaint closure
+                  </p>
+                </div>
+                <div className="workspace-info-meta">
+                  <span className={`workspace-badge ${statusClass(stage >= 3 ? "CAR issued" : "Open")}`}>
+                    {stage >= 3 ? "CAR issued" : "Open"}
+                  </span>
+                </div>
+              </div>
+              <button className="workspace-table-row" type="button" onClick={openMonthlySummary}>
+                <div>
+                  <p className="workspace-info-title">Monthly quality summary</p>
+                  <p className="workspace-info-detail">
+                    Complaint trend, CAR status, and signed closure reporting hook
+                  </p>
+                </div>
+                <div className="workspace-info-meta">
+                  <span>Open summary</span>
+                </div>
+              </button>
+            </div>
+          </DrawerSection>
         </div>
         <div className="workspace-stack">
           <DrawerSection title="Workflow">
@@ -2904,7 +3544,7 @@ function ImsComplaintWorkspace({ closeWorkspace, payload, surface, updateRecord 
                 { label: "Severity", value: form.severity },
                 { label: "Source", value: preset.source },
                 { label: "Owner", value: form.owner },
-                { label: "CAR", value: `CAR-${form.id.slice(-3)}` },
+                { label: "CAR", value: carReference },
               ]}
             />
           </DrawerSection>
@@ -2917,32 +3557,92 @@ function ImsComplaintWorkspace({ closeWorkspace, payload, surface, updateRecord 
   );
 }
 
-function ImsPermitWorkspace({ closeWorkspace, payload, surface, updateRecord }) {
-  const permit = payload.record || imsPermits[2];
-  const [stage, setStage] = useState(permit.status === "Valid" ? 3 : 1);
+function ImsPermitWorkspace({
+  closeWorkspace,
+  openPageWorkspace,
+  payload,
+  resolveRecord,
+  surface,
+  updateRecord,
+}) {
+  const permitSeed = payload.record || payload.permit || imsPermits[1];
+  const permit = resolveRecord?.("imsPermits", permitSeed) || permitSeed;
+  const inspectionSeed =
+    payload.inspection || findImsInspectionById(permit.linkedInspection);
+  const inspection =
+    resolveRecord?.("imsInspections", inspectionSeed) || inspectionSeed;
+  const training = payload.training || findImsTrainingByTitle(permit.linkedTraining);
+  const packDocuments = resolveGeneratedDocuments(
+    resolveRecord,
+    environmentalPackDocuments(permit, inspection, training)
+  );
+  const initialStage =
+    permit.lifecycleStage === "Active" || permit.status === "Valid"
+      ? 3
+      : permit.lifecycleStage === "Authority review" || permit.status === "Under Review"
+        ? 2
+        : 1;
+  const [stage, setStage] = useState(initialStage);
   const [form, setForm] = useState({
     id: permit.id,
     type: permit.type,
     authority: permit.authority,
     expiry: permit.expiry,
-    owner: "Environmental Manager",
+    owner: permit.owner || "Environmental Manager",
     reminder: "21",
+    nextAction: permit.nextAction,
   });
   const [timeline, setTimeline] = useState([
     {
-      title: "Renewal log opened",
-      meta: timelineStamp(`${form.id} · Expiry ${form.expiry}`),
+      title: "Environmental permit workspace opened",
+      meta: timelineStamp(`${permit.id} · ${permit.site}`),
+    },
+    {
+      title: "Linked inspection evidence resolved",
+      meta: timelineStamp(`${inspection.id} · ${inspection.status}`),
+    },
+    {
+      title: "Training and DMS pack linked",
+      meta: timelineStamp(`${training.title} · ${packDocuments.length} controlled records`),
     },
   ]);
+
+  function openInspection() {
+    openPageWorkspace("imsInspection", { record: inspection, permit }, "environmental");
+  }
+
+  function openTraining() {
+    openPageWorkspace(
+      "environmentalTraining",
+      { permit, inspection, training },
+      "environmental"
+    );
+  }
+
+  function openControlPack() {
+    openPageWorkspace(
+      "environmentalPack",
+      { permit, inspection, training },
+      "environmental"
+    );
+  }
 
   function advance() {
     if (stage === 1) {
       setStage(2);
-      updateRecord("imsPermits", form.id, { status: "Under Review" });
+      updateRecord("imsPermits", form.id, {
+        authority: form.authority,
+        expiry: form.expiry,
+        lifecycleStage: "Authority review",
+        nextAction: form.nextAction,
+        owner: form.owner,
+        status: "Under Review",
+        type: form.type,
+      });
       setTimeline((current) => [
         {
           title: "Renewal package submitted",
-          meta: timelineStamp(`${form.type} sent to ${form.authority}`),
+          meta: timelineStamp(`${form.type} submitted to ${form.authority}`),
         },
         ...current,
       ]);
@@ -2951,13 +3651,18 @@ function ImsPermitWorkspace({ closeWorkspace, payload, surface, updateRecord }) 
 
     setStage(3);
     updateRecord("imsPermits", form.id, {
-      status: "Valid",
+      authority: form.authority,
       expiry: "2026-11-10",
+      lifecycleStage: "Active",
+      nextAction: "Renewed permit issued and board register refreshed",
+      owner: form.owner,
+      status: "Valid",
+      type: form.type,
     });
     setTimeline((current) => [
       {
-        title: "Permit renewed",
-        meta: timelineStamp("Expiry reminder reset and permit register refreshed"),
+        title: "Permit renewed and register updated",
+        meta: timelineStamp("Expiry reminder reset and linked control pack marked active"),
       },
       ...current,
     ]);
@@ -2965,27 +3670,61 @@ function ImsPermitWorkspace({ closeWorkspace, payload, surface, updateRecord }) 
 
   return (
     <WorkspaceShell
-      moduleLabel="IMS - Environmental"
-      title="Permit / license renewal"
-      subtitle="Track expiring permit, route renewal, and keep reminder controls live."
-      badge={stage === 3 ? "Renewed" : stage === 2 ? "Authority review" : permit.status}
+      moduleLabel="Environmental Management"
+      title={permit.type}
+      subtitle={`${permit.id} · ${permit.site}`}
+      badge={stage === 3 ? "Active" : stage === 2 ? "Authority review" : permit.status}
       badgeTone={stage === 3 ? "approved" : stage === 2 ? "review" : "warning"}
       footer={
-        <button className="primary-button" type="button" onClick={stage === 3 ? closeWorkspace : advance}>
-          {stage === 1
-            ? "Submit renewal"
-            : stage === 2
-              ? "Confirm renewed permit"
-              : closeActionLabel(surface)}
-        </button>
+        <>
+          <button className="ghost-button" type="button" onClick={openInspection}>
+            Open linked inspection
+          </button>
+          <button className="secondary-button" type="button" onClick={openControlPack}>
+            Open control pack
+          </button>
+          <button
+            className="primary-button"
+            type="button"
+            onClick={stage === 3 ? closeWorkspace : advance}
+          >
+            {stage === 1
+              ? "Submit renewal"
+              : stage === 2
+                ? "Confirm renewed permit"
+                : closeActionLabel(surface)}
+          </button>
+        </>
       }
     >
       <div className="workspace-content-grid">
         <div className="workspace-stack">
-          <DrawerSection title="Renewal details">
+          <DrawerSection title="Permit summary" subtitle={`${permit.id} · ${permit.site}`}>
+            <MetaGrid
+              items={[
+                { label: "Authority", value: form.authority },
+                { label: "Owner", value: form.owner },
+                { label: "Expiry", value: form.expiry },
+                { label: "Lifecycle", value: stage === 3 ? "Active" : stage === 2 ? "Authority review" : permit.lifecycleStage },
+                { label: "Linked inspection", value: inspection.id },
+                { label: "Training", value: training.title },
+              ]}
+            />
+          </DrawerSection>
+
+          <DrawerSection
+            title="Renewal controls"
+            subtitle="Keep owner, reminder route, and next action aligned before issue."
+          >
             <div className="workspace-form-grid">
-              <Field label="Permit ID">
-                <input className="workspace-input" value={form.id} readOnly />
+              <Field label="Permit type" wide>
+                <input
+                  className="workspace-input"
+                  value={form.type}
+                  onChange={(event) =>
+                    setForm((current) => ({ ...current, type: event.target.value }))
+                  }
+                />
               </Field>
               <Field label="Authority">
                 <input
@@ -2993,15 +3732,6 @@ function ImsPermitWorkspace({ closeWorkspace, payload, surface, updateRecord }) 
                   value={form.authority}
                   onChange={(event) =>
                     setForm((current) => ({ ...current, authority: event.target.value }))
-                  }
-                />
-              </Field>
-              <Field label="Permit type" wide>
-                <input
-                  className="workspace-input"
-                  value={form.type}
-                  onChange={(event) =>
-                    setForm((current) => ({ ...current, type: event.target.value }))
                   }
                 />
               </Field>
@@ -3033,47 +3763,97 @@ function ImsPermitWorkspace({ closeWorkspace, payload, surface, updateRecord }) 
                   }
                 />
               </Field>
+              <Field label="Next action" wide>
+                <input
+                  className="workspace-input"
+                  value={form.nextAction}
+                  onChange={(event) =>
+                    setForm((current) => ({ ...current, nextAction: event.target.value }))
+                  }
+                />
+              </Field>
+            </div>
+            <div className="workspace-note">
+              <p>
+                Renewal status, inspection evidence, training record, and controlled
+                issue documents remain visible from one environmental workspace.
+              </p>
             </div>
           </DrawerSection>
-          <DrawerSection title="Renewal pack">
-            <div className="workspace-list">
-              {[
-                "Latest inspection record attached",
-                "Authority submission receipt captured",
-                "Reminder route to site, IMS, and project director",
-              ].map((item) => (
-                <div key={item} className="workspace-list-row">
-                  <div>
-                    <strong>{item}</strong>
-                    <span>Permit control pack</span>
-                  </div>
-                  <span>Ready</span>
+
+          <DrawerSection
+            title="Linked workflow records"
+            subtitle="Move across inspection, training, and DMS pack without leaving the environmental chain."
+          >
+            <div className="workspace-table-list">
+              <button className="workspace-table-row" type="button" onClick={openInspection}>
+                <div>
+                  <p className="workspace-info-title">{inspection.id}</p>
+                  <p className="workspace-info-detail">Inspection evidence and rectification status</p>
                 </div>
-              ))}
+                <div className="workspace-info-meta">
+                  <span className={`workspace-badge ${statusClass(inspection.status)}`}>
+                    {inspection.status}
+                  </span>
+                </div>
+              </button>
+              <button className="workspace-table-row" type="button" onClick={openTraining}>
+                <div>
+                  <p className="workspace-info-title">{training.title}</p>
+                  <p className="workspace-info-detail">Briefing roster and sync to renewal route</p>
+                </div>
+                <div className="workspace-info-meta">
+                  <span>{training.date}</span>
+                </div>
+              </button>
+              <button className="workspace-table-row" type="button" onClick={openControlPack}>
+                <div>
+                  <p className="workspace-info-title">Environmental control pack</p>
+                  <p className="workspace-info-detail">Controlled DMS records for permit, inspection, and training</p>
+                </div>
+                <div className="workspace-info-meta">
+                  <span>{packDocuments.length} records</span>
+                </div>
+              </button>
             </div>
           </DrawerSection>
         </div>
+
         <div className="workspace-stack">
-          <DrawerSection title="Workflow">
+          <DrawerSection title="Lifecycle">
             <StepRail
               current={stage - 1}
               steps={[
-                { label: "Expiry watch", detail: "Reminder triggered" },
-                { label: "Renewal", detail: "Authority review" },
-                { label: "Active", detail: "Register refreshed" },
+                { label: "Application pack", detail: "Prepare renewal set" },
+                { label: "Authority review", detail: "Submission and reply" },
+                { label: "Active validity", detail: "Register refreshed" },
               ]}
             />
           </DrawerSection>
-          <DrawerSection title="Permit summary">
-            <MetaGrid
-              items={[
-                { label: "Permit", value: form.type },
-                { label: "Authority", value: form.authority },
-                { label: "Expiry", value: form.expiry },
-                { label: "Owner", value: form.owner },
-              ]}
-            />
+
+          <DrawerSection title="Control pack documents">
+            <div className="workspace-table-list">
+              {packDocuments.map((doc) => (
+                <button
+                  key={doc.id}
+                  className="workspace-table-row"
+                  type="button"
+                  onClick={() => openPageWorkspace("dmsReview", { record: doc }, "dms")}
+                >
+                  <div>
+                    <p className="workspace-info-title">{doc.title}</p>
+                    <p className="workspace-info-detail">{doc.id} · {doc.category}</p>
+                  </div>
+                  <div className="workspace-info-meta">
+                    <span className={`workspace-badge ${statusClass(doc.status)}`}>
+                      {doc.status}
+                    </span>
+                  </div>
+                </button>
+              ))}
+            </div>
           </DrawerSection>
+
           <DrawerSection title="Audit trail">
             <Timeline items={timeline} />
           </DrawerSection>
@@ -3083,17 +3863,58 @@ function ImsPermitWorkspace({ closeWorkspace, payload, surface, updateRecord }) 
   );
 }
 
-function ImsInspectionWorkspace({ closeWorkspace, payload, surface, updateRecord }) {
-  const inspection = payload.record || imsInspections[0];
+function ImsInspectionWorkspace({
+  closeWorkspace,
+  openPageWorkspace,
+  payload,
+  resolveRecord,
+  surface,
+  updateRecord,
+}) {
+  const inspectionSeed = payload.record || payload.inspection || imsInspections[0];
+  const inspection =
+    resolveRecord?.("imsInspections", inspectionSeed) || inspectionSeed;
+  const permitSeed =
+    payload.permit || findImsPermitByInspection(inspection.id);
+  const permit = resolveRecord?.("imsPermits", permitSeed) || permitSeed;
+  const training = payload.training || findImsTrainingByTitle(permit.linkedTraining);
+  const packDocuments = resolveGeneratedDocuments(
+    resolveRecord,
+    environmentalPackDocuments(permit, inspection, training)
+  );
   const [stage, setStage] = useState(inspection.status === "Completed" ? 3 : 2);
   const [findingCount, setFindingCount] = useState(inspection.issues || 2);
   const [rectifiedCount, setRectifiedCount] = useState(inspection.rectified || 0);
   const [timeline, setTimeline] = useState([
     {
-      title: "Inspection record opened",
+      title: "Environmental inspection record opened",
       meta: timelineStamp(`${inspection.id} · ${inspection.location}`),
     },
+    {
+      title: "Linked permit lifecycle resolved",
+      meta: timelineStamp(`${permit.id} · ${permit.lifecycleStage}`),
+    },
   ]);
+
+  function openPermit() {
+    openPageWorkspace("imsPermit", { record: permit, inspection }, "environmental");
+  }
+
+  function openTraining() {
+    openPageWorkspace(
+      "environmentalTraining",
+      { permit, inspection, training },
+      "environmental"
+    );
+  }
+
+  function openControlPack() {
+    openPageWorkspace(
+      "environmentalPack",
+      { permit, inspection, training },
+      "environmental"
+    );
+  }
 
   function advance() {
     if (stage <= 2) {
@@ -3104,10 +3925,15 @@ function ImsInspectionWorkspace({ closeWorkspace, payload, surface, updateRecord
         rectified: closedCount,
         status: "Completed",
       });
+      if (permit.lifecycleStage !== "Active") {
+        updateRecord("imsPermits", permit.id, {
+          nextAction: "Inspection evidence ready for renewal submission pack",
+        });
+      }
       setTimeline((current) => [
         {
           title: "Rectification evidence uploaded",
-          meta: timelineStamp("Before / after photos and close-out verified"),
+          meta: timelineStamp("Before / after photos verified and linked back to permit pack"),
         },
         ...current,
       ]);
@@ -3116,15 +3942,27 @@ function ImsInspectionWorkspace({ closeWorkspace, payload, surface, updateRecord
 
   return (
     <WorkspaceShell
-      moduleLabel="IMS - Environmental"
-      title="Environmental inspection"
-      subtitle="Checklist execution with findings, photo evidence, and rectification close-out."
+      moduleLabel="Environmental Management"
+      title={inspection.id}
+      subtitle={`${inspection.location} · ${inspection.inspector}`}
       badge={stage === 3 ? "Completed" : "In progress"}
       badgeTone={stage === 3 ? "approved" : "warning"}
       footer={
-        <button className="primary-button" type="button" onClick={stage === 3 ? closeWorkspace : advance}>
-          {stage === 3 ? closeActionLabel(surface) : "Close with rectification proof"}
-        </button>
+        <>
+          <button className="ghost-button" type="button" onClick={openPermit}>
+            Open linked permit
+          </button>
+          <button className="secondary-button" type="button" onClick={openControlPack}>
+            Open control pack
+          </button>
+          <button
+            className="primary-button"
+            type="button"
+            onClick={stage === 3 ? closeWorkspace : advance}
+          >
+            {stage === 3 ? closeActionLabel(surface) : "Close with rectification proof"}
+          </button>
+        </>
       }
     >
       <div className="workspace-content-grid">
@@ -3145,7 +3983,8 @@ function ImsInspectionWorkspace({ closeWorkspace, payload, surface, updateRecord
               </div>
             </MobileFrame>
           </DrawerSection>
-          <DrawerSection title="Findings & photo evidence">
+
+          <DrawerSection title="Findings and photo evidence">
             <div className="workspace-evidence-grid">
               <div className="workspace-evidence-card">
                 <strong>Findings logged</strong>
@@ -3153,7 +3992,7 @@ function ImsInspectionWorkspace({ closeWorkspace, payload, surface, updateRecord
               </div>
               <div className="workspace-evidence-card">
                 <strong>Rectified</strong>
-                <span>{rectifiedCount} issue(s) already closed with after-photo proof.</span>
+                <span>{rectifiedCount} issue(s) closed with after-photo proof.</span>
               </div>
             </div>
             <div className="workspace-form-grid">
@@ -3173,15 +4012,50 @@ function ImsInspectionWorkspace({ closeWorkspace, payload, surface, updateRecord
               </Field>
             </div>
           </DrawerSection>
+
+          <DrawerSection title="Linked workflow records">
+            <div className="workspace-table-list">
+              <button className="workspace-table-row" type="button" onClick={openPermit}>
+                <div>
+                  <p className="workspace-info-title">{permit.type}</p>
+                  <p className="workspace-info-detail">{permit.id} · {permit.nextAction}</p>
+                </div>
+                <div className="workspace-info-meta">
+                  <span className={`workspace-badge ${statusClass(permit.status)}`}>
+                    {permit.status}
+                  </span>
+                </div>
+              </button>
+              <button className="workspace-table-row" type="button" onClick={openTraining}>
+                <div>
+                  <p className="workspace-info-title">{training.title}</p>
+                  <p className="workspace-info-detail">Briefing linked to inspection closure</p>
+                </div>
+                <div className="workspace-info-meta">
+                  <span>{training.date}</span>
+                </div>
+              </button>
+              <button className="workspace-table-row" type="button" onClick={openControlPack}>
+                <div>
+                  <p className="workspace-info-title">Environmental control pack</p>
+                  <p className="workspace-info-detail">Pack inspection evidence into controlled issue documents</p>
+                </div>
+                <div className="workspace-info-meta">
+                  <span>{packDocuments.length} records</span>
+                </div>
+              </button>
+            </div>
+          </DrawerSection>
         </div>
+
         <div className="workspace-stack">
           <DrawerSection title="Workflow">
             <StepRail
               current={stage - 1}
               steps={[
                 { label: "Checklist", detail: "Site walk" },
-                { label: "Rectification", detail: "Before / after" },
-                { label: "Closed", detail: "Audit complete" },
+                { label: "Rectification", detail: "Before / after evidence" },
+                { label: "Closed", detail: "Linked back to permit pack" },
               ]}
             />
           </DrawerSection>
@@ -3191,12 +4065,388 @@ function ImsInspectionWorkspace({ closeWorkspace, payload, surface, updateRecord
                 { label: "Reference", value: inspection.id },
                 { label: "Inspector", value: inspection.inspector },
                 { label: "Location", value: inspection.location },
+                { label: "Linked permit", value: permit.id },
+                { label: "Linked training", value: training.title },
                 { label: "Status", value: stage === 3 ? "Completed" : "In progress" },
               ]}
             />
           </DrawerSection>
+          <DrawerSection title="Supporting documents">
+            <div className="workspace-table-list">
+              {packDocuments.slice(1).map((doc) => (
+                <button
+                  key={doc.id}
+                  className="workspace-table-row"
+                  type="button"
+                  onClick={() => openPageWorkspace("dmsReview", { record: doc }, "dms")}
+                >
+                  <div>
+                    <p className="workspace-info-title">{doc.title}</p>
+                    <p className="workspace-info-detail">{doc.id} · {doc.category}</p>
+                  </div>
+                  <div className="workspace-info-meta">
+                    <span className={`workspace-badge ${statusClass(doc.status)}`}>
+                      {doc.status}
+                    </span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </DrawerSection>
           <DrawerSection title="Audit trail">
             <Timeline items={timeline} />
+          </DrawerSection>
+        </div>
+      </div>
+    </WorkspaceShell>
+  );
+}
+
+function EnvironmentalTrainingWorkspace({
+  closeWorkspace,
+  openPageWorkspace,
+  payload,
+  resolveRecord,
+  surface,
+}) {
+  const permitSeed = payload.permit || imsPermits[1];
+  const permit = resolveRecord?.("imsPermits", permitSeed) || permitSeed;
+  const inspectionSeed =
+    payload.inspection || findImsInspectionById(permit.linkedInspection);
+  const inspection =
+    resolveRecord?.("imsInspections", inspectionSeed) || inspectionSeed;
+  const training = payload.training || findImsTrainingByTitle(permit.linkedTraining);
+  const packDocuments = resolveGeneratedDocuments(
+    resolveRecord,
+    environmentalPackDocuments(permit, inspection, training)
+  );
+  const isCompleted = training.date.startsWith("Completed");
+  const timeline = [
+    {
+      title: "Training record linked to environmental workflow",
+      meta: timelineStamp(`${training.title} · ${permit.id}`),
+    },
+    {
+      title: "Inspection and permit context resolved",
+      meta: timelineStamp(`${inspection.id} · ${permit.lifecycleStage}`),
+    },
+  ];
+
+  return (
+    <WorkspaceShell
+      moduleLabel="Environmental Management"
+      title={training.title}
+      subtitle={`${training.date} · linked to ${permit.id}`}
+      badge={isCompleted ? "Completed" : "Scheduled"}
+      badgeTone={isCompleted ? "approved" : "review"}
+      footer={
+        <>
+          <button
+            className="ghost-button"
+            type="button"
+            onClick={() => openPageWorkspace("imsPermit", { record: permit }, "environmental")}
+          >
+            Open linked permit
+          </button>
+          <button
+            className="secondary-button"
+            type="button"
+            onClick={() =>
+              openPageWorkspace(
+                "environmentalPack",
+                { permit, inspection, training },
+                "environmental"
+              )
+            }
+          >
+            Open control pack
+          </button>
+          <button className="primary-button" type="button" onClick={closeWorkspace}>
+            {closeActionLabel(surface)}
+          </button>
+        </>
+      }
+    >
+      <div className="workspace-content-grid">
+        <div className="workspace-stack">
+          <DrawerSection title="Training summary">
+            <MetaGrid
+              items={[
+                { label: "Session", value: training.title },
+                { label: "Date", value: training.date },
+                { label: "Linked permit", value: permit.id },
+                { label: "Linked inspection", value: inspection.id },
+              ]}
+            />
+          </DrawerSection>
+          <DrawerSection title="Attendance and compliance sync">
+            <div className="workspace-list">
+              {[
+                {
+                  title: "Attendance record issued",
+                  detail: "Roster is linked to the environmental workflow and renewal pack.",
+                  meta: isCompleted ? "Synced" : "Scheduled",
+                },
+                {
+                  title: "Permit owner notified",
+                  detail: `Next action kept in sync with ${permit.owner}.`,
+                  meta: "Linked",
+                },
+                {
+                  title: "DMS record ready",
+                  detail: "Briefing attendance can be issued as a controlled pack record.",
+                  meta: packDocuments[2].status,
+                },
+              ].map((item) => (
+                <div key={item.title} className="workspace-list-row">
+                  <div>
+                    <strong>{item.title}</strong>
+                    <span>{item.detail}</span>
+                  </div>
+                  <span>{item.meta}</span>
+                </div>
+              ))}
+            </div>
+          </DrawerSection>
+          <DrawerSection title="Linked workflow records">
+            <div className="workspace-table-list">
+              <button
+                className="workspace-table-row"
+                type="button"
+                onClick={() => openPageWorkspace("imsPermit", { record: permit }, "environmental")}
+              >
+                <div>
+                  <p className="workspace-info-title">{permit.type}</p>
+                  <p className="workspace-info-detail">{permit.id} · permit lifecycle</p>
+                </div>
+                <div className="workspace-info-meta">
+                  <span className={`workspace-badge ${statusClass(permit.status)}`}>
+                    {permit.status}
+                  </span>
+                </div>
+              </button>
+              <button
+                className="workspace-table-row"
+                type="button"
+                onClick={() =>
+                  openPageWorkspace("imsInspection", { record: inspection, permit }, "environmental")
+                }
+              >
+                <div>
+                  <p className="workspace-info-title">{inspection.id}</p>
+                  <p className="workspace-info-detail">Inspection evidence and rectification state</p>
+                </div>
+                <div className="workspace-info-meta">
+                  <span className={`workspace-badge ${statusClass(inspection.status)}`}>
+                    {inspection.status}
+                  </span>
+                </div>
+              </button>
+            </div>
+          </DrawerSection>
+        </div>
+        <div className="workspace-stack">
+          <DrawerSection title="Training document">
+            <button
+              className="workspace-table-row"
+              type="button"
+              onClick={() => openPageWorkspace("dmsReview", { record: packDocuments[2] }, "dms")}
+            >
+              <div>
+                <p className="workspace-info-title">{packDocuments[2].title}</p>
+                <p className="workspace-info-detail">{packDocuments[2].id} · controlled record</p>
+              </div>
+              <div className="workspace-info-meta">
+                <span className={`workspace-badge ${statusClass(packDocuments[2].status)}`}>
+                  {packDocuments[2].status}
+                </span>
+              </div>
+            </button>
+          </DrawerSection>
+          <DrawerSection title="Audit trail">
+            <Timeline items={timeline} />
+          </DrawerSection>
+        </div>
+      </div>
+    </WorkspaceShell>
+  );
+}
+
+function EnvironmentalPackWorkspace({
+  openPageWorkspace,
+  payload,
+  resolveRecord,
+}) {
+  const permitSeed = payload.permit || imsPermits[1];
+  const permit = resolveRecord?.("imsPermits", permitSeed) || permitSeed;
+  const inspectionSeed =
+    payload.inspection || findImsInspectionById(permit.linkedInspection);
+  const inspection =
+    resolveRecord?.("imsInspections", inspectionSeed) || inspectionSeed;
+  const training = payload.training || findImsTrainingByTitle(permit.linkedTraining);
+  const documents = resolveGeneratedDocuments(
+    resolveRecord,
+    environmentalPackDocuments(permit, inspection, training)
+  );
+  const [selectedDocId, setSelectedDocId] = useState(documents[0]?.id || "");
+  const selectedDoc = documents.find((item) => item.id === selectedDocId) || documents[0];
+
+  return (
+    <WorkspaceShell
+      moduleLabel="Environmental Management"
+      title="Environmental control pack"
+      subtitle={`${permit.id} · ${permit.site}`}
+      badge={`${documents.length} records`}
+      badgeTone="review"
+      footer={
+        <>
+          <button
+            className="ghost-button"
+            type="button"
+            onClick={() => openPageWorkspace("imsPermit", { record: permit }, "environmental")}
+          >
+            Open linked permit
+          </button>
+          <button
+            className="secondary-button"
+            type="button"
+            onClick={() =>
+              openPageWorkspace(
+                "dmsUpload",
+                {
+                  library: "Project DMS",
+                  prefill: {
+                    access: "Internal review",
+                    category: selectedDoc.category,
+                    owner: selectedDoc.owner,
+                    phase: selectedDoc.phase,
+                    title: selectedDoc.title,
+                    version: "Rev A",
+                  },
+                },
+                "dms"
+              )
+            }
+          >
+            Create controlled record
+          </button>
+          <button
+            className="primary-button"
+            type="button"
+            onClick={() => openPageWorkspace("dmsReview", { record: selectedDoc }, "dms")}
+          >
+            Open in DMS
+          </button>
+        </>
+      }
+    >
+      <div className="workspace-content-grid">
+        <div className="workspace-stack">
+          <DrawerSection
+            title="Pack register"
+            subtitle="Select the record to review its metadata and jump into DMS."
+          >
+            <div className="workspace-table-list">
+              {documents.map((doc) => (
+                <button
+                  key={doc.id}
+                  className="workspace-table-row"
+                  type="button"
+                  onClick={() => setSelectedDocId(doc.id)}
+                >
+                  <div>
+                    <p className="workspace-info-title">{doc.title}</p>
+                    <p className="workspace-info-detail">{doc.id} · {doc.category}</p>
+                  </div>
+                  <div className="workspace-info-meta">
+                    <span className={`workspace-badge ${statusClass(doc.status)}`}>
+                      {doc.status}
+                    </span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </DrawerSection>
+          <DrawerSection title="Linked workflow records">
+            <div className="workspace-table-list">
+              <button
+                className="workspace-table-row"
+                type="button"
+                onClick={() => openPageWorkspace("imsPermit", { record: permit }, "environmental")}
+              >
+                <div>
+                  <p className="workspace-info-title">{permit.type}</p>
+                  <p className="workspace-info-detail">{permit.id} · lifecycle workspace</p>
+                </div>
+                <div className="workspace-info-meta">
+                  <span className={`workspace-badge ${statusClass(permit.status)}`}>
+                    {permit.status}
+                  </span>
+                </div>
+              </button>
+              <button
+                className="workspace-table-row"
+                type="button"
+                onClick={() =>
+                  openPageWorkspace("imsInspection", { record: inspection, permit }, "environmental")
+                }
+              >
+                <div>
+                  <p className="workspace-info-title">{inspection.id}</p>
+                  <p className="workspace-info-detail">Inspection evidence and rectification closure</p>
+                </div>
+                <div className="workspace-info-meta">
+                  <span className={`workspace-badge ${statusClass(inspection.status)}`}>
+                    {inspection.status}
+                  </span>
+                </div>
+              </button>
+              <button
+                className="workspace-table-row"
+                type="button"
+                onClick={() =>
+                  openPageWorkspace(
+                    "environmentalTraining",
+                    { permit, inspection, training },
+                    "environmental"
+                  )
+                }
+              >
+                <div>
+                  <p className="workspace-info-title">{training.title}</p>
+                  <p className="workspace-info-detail">Training linkage and attendance record</p>
+                </div>
+                <div className="workspace-info-meta">
+                  <span>{training.date}</span>
+                </div>
+              </button>
+            </div>
+          </DrawerSection>
+        </div>
+        <div className="workspace-stack">
+          <DrawerSection title="Selected record preview">
+            <DocumentCanvas title={selectedDoc.title} caption={`${selectedDoc.id} · ${selectedDoc.type}`} />
+          </DrawerSection>
+          <DrawerSection title="Record metadata">
+            <MetaGrid
+              items={[
+                { label: "Category", value: selectedDoc.category },
+                { label: "Owner", value: selectedDoc.owner },
+                { label: "Phase", value: selectedDoc.phase },
+                { label: "Status", value: selectedDoc.status },
+                { label: "Library", value: `${selectedDoc.library} DMS` },
+                { label: "External access", value: selectedDoc.externalAccess },
+              ]}
+            />
+          </DrawerSection>
+          <DrawerSection title="DMS action note">
+            <div className="workspace-note">
+              <p>
+                Environmental detail pages now route into controlled DMS records
+                instead of generic popups, so permit, inspection, training, and pack
+                issue all stay in one governed chain.
+              </p>
+            </div>
           </DrawerSection>
         </div>
       </div>
@@ -4014,17 +5264,36 @@ function ProcurementDeliveryWorkspace({
   navigateToView,
   openPageWorkspace,
   payload,
-  surface,
+  resolveRecord,
   updateRecord,
 }) {
-  const order = payload.record || procurementOrders[1];
+  const orderSeed = payload.record || procurementOrders[1];
+  const order = resolveRecord?.("procurementOrders", orderSeed) || orderSeed;
   const [form, setForm] = useState({
     noteNo: "DN-6651",
+    invoiceNo: "INV-2026-2088",
+    invoiceAmount: order.amount,
     receivedQty: order.item.includes("Helmets") ? "480 units" : "420 tons",
     receiver: "Kent Wong",
     condition: "Accepted",
+    varianceNote: "PO quantity, GRN count, and invoice amount are aligned.",
   });
-  const [confirmed, setConfirmed] = useState(false);
+  const [confirmed, setConfirmed] = useState(order.step >= 5);
+  const [timeline, setTimeline] = useState([
+    {
+      title: "Delivery verification opened",
+      meta: timelineStamp(`${order.id} · ${order.vendor}`),
+    },
+  ]);
+  const handoverOrder = confirmed
+    ? { ...order, step: 5, status: "QS Handover" }
+    : order;
+  const varianceStatus =
+    form.condition === "Accepted"
+      ? "No variance"
+      : form.condition === "Accepted with remarks"
+        ? "Variance review"
+        : "Rejected";
 
   function confirmReceipt() {
     setConfirmed(true);
@@ -4032,6 +5301,13 @@ function ProcurementDeliveryWorkspace({
       step: 5,
       status: "QS Handover",
     });
+    setTimeline((current) => [
+      {
+        title: "GRN verified and routed to QS",
+        meta: timelineStamp(`${form.noteNo} · ${form.invoiceNo}`),
+      },
+      ...current,
+    ]);
   }
 
   function openQsWorkflow() {
@@ -4043,12 +5319,22 @@ function ProcurementDeliveryWorkspace({
       openPageWorkspace(
         "qsPayment",
         {
-          linkedOrder: order,
+          linkedOrder: handoverOrder,
           record: qsPayments[0],
         },
         "qs"
       );
       return;
+    }
+  }
+
+  function openOrderWorkflow() {
+    if (navigateToView) {
+      navigateToView("procurement");
+    }
+
+    if (openPageWorkspace) {
+      openPageWorkspace("procurementOrder", { record: handoverOrder }, "procurement");
     }
   }
 
@@ -4063,9 +5349,9 @@ function ProcurementDeliveryWorkspace({
         <button
           className="primary-button"
           type="button"
-          onClick={confirmed && surface === "page" ? openQsWorkflow : confirmReceipt}
+          onClick={confirmed ? openQsWorkflow : confirmReceipt}
         >
-          {confirmed && surface === "page" ? "Open QS handover" : "Confirm receipt"}
+          {confirmed ? "Open QS handover" : "Confirm receipt"}
         </button>
       }
     >
@@ -4082,6 +5368,15 @@ function ProcurementDeliveryWorkspace({
                   }
                 />
               </Field>
+              <Field label="Invoice reference">
+                <input
+                  className="workspace-input"
+                  value={form.invoiceNo}
+                  onChange={(event) =>
+                    setForm((current) => ({ ...current, invoiceNo: event.target.value }))
+                  }
+                />
+              </Field>
               <Field label="Received quantity">
                 <input
                   className="workspace-input"
@@ -4090,6 +5385,18 @@ function ProcurementDeliveryWorkspace({
                     setForm((current) => ({
                       ...current,
                       receivedQty: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+              <Field label="Invoice amount">
+                <input
+                  className="workspace-input"
+                  value={form.invoiceAmount}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      invoiceAmount: event.target.value,
                     }))
                   }
                 />
@@ -4119,19 +5426,89 @@ function ProcurementDeliveryWorkspace({
                   <option>Rejected</option>
                 </select>
               </Field>
+              <Field label="Variance note" wide>
+                <textarea
+                  className="workspace-textarea"
+                  rows={4}
+                  value={form.varianceNote}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      varianceNote: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
             </div>
           </DrawerSection>
         </div>
         <div className="workspace-stack">
+          <DrawerSection title="Workflow">
+            <StepRail
+              current={confirmed ? 3 : 1}
+              steps={[
+                { label: "Delivery note", detail: "Site receipt" },
+                { label: "GRN verify", detail: "Quantity and condition" },
+                { label: "Three-way match", detail: "PO / GRN / invoice" },
+                { label: "QS handover", detail: "Commercial review" },
+              ]}
+            />
+          </DrawerSection>
+          <DrawerSection title="Three-way match">
+            <MetaGrid
+              items={[
+                { label: "PO", value: order.id },
+                { label: "GRN", value: confirmed ? "Verified" : "Pending verification" },
+                { label: "Invoice", value: form.invoiceNo },
+                { label: "Invoice amount", value: form.invoiceAmount },
+                { label: "Variance", value: varianceStatus },
+                { label: "QS handover", value: confirmed ? "Ready" : "Hold until receipt" },
+              ]}
+            />
+            <div className={`workspace-note ${varianceStatus === "No variance" ? "success" : ""}`}>
+              <p>{form.varianceNote}</p>
+            </div>
+          </DrawerSection>
           <DrawerSection title="Linked outcome">
             <MetaGrid
               items={[
                 { label: "Order", value: order.id },
                 { label: "Vendor", value: order.vendor },
-                { label: "Post receipt status", value: confirmed ? "QS Handover" : "Delivery Pending" },
+                { label: "Post receipt status", value: handoverOrder.status },
                 { label: "Finance packet", value: "Ready after verification" },
               ]}
             />
+          </DrawerSection>
+          <DrawerSection title="Linked workflow records">
+            <div className="workspace-table-list">
+              <button className="workspace-table-row" type="button" onClick={openOrderWorkflow}>
+                <div>
+                  <p className="workspace-info-title">{order.id}</p>
+                  <p className="workspace-info-detail">
+                    Purchase order, commercial approval trail, and delivery context
+                  </p>
+                </div>
+                <div className="workspace-info-meta">
+                  <span className={`workspace-badge ${statusClass(handoverOrder.status)}`}>
+                    {handoverOrder.status}
+                  </span>
+                </div>
+              </button>
+              <button className="workspace-table-row" type="button" onClick={openQsWorkflow}>
+                <div>
+                  <p className="workspace-info-title">QS handover</p>
+                  <p className="workspace-info-detail">
+                    Open payment certificate review after PO / GRN / invoice match
+                  </p>
+                </div>
+                <div className="workspace-info-meta">
+                  <span>{confirmed ? "Ready" : "Preview"}</span>
+                </div>
+              </button>
+            </div>
+          </DrawerSection>
+          <DrawerSection title="Audit trail">
+            <Timeline items={timeline} />
           </DrawerSection>
         </div>
       </div>
@@ -4139,9 +5516,23 @@ function ProcurementDeliveryWorkspace({
   );
 }
 
-function QsPaymentWorkspace({ payload, updateRecord }) {
+function QsPaymentWorkspace({
+  navigateToView,
+  openPageWorkspace,
+  payload,
+  updateRecord,
+}) {
   const payment = payload.record || qsPayments[0];
-  const linkedOrder = payload.linkedOrder;
+  const linkedOrder =
+    payload.linkedOrder ||
+    procurementOrders.find((item) => item.step >= 4) ||
+    procurementOrders[0];
+  const deliveryNoteStatus =
+    linkedOrder?.step >= 5
+      ? "Verified"
+      : linkedOrder?.step >= 4
+        ? "Pending verification"
+        : "Awaiting delivery";
   const [step, setStep] = useState(payment.step);
   const [status, setStatus] = useState(payment.status);
   const [reviewNote, setReviewNote] = useState(
@@ -4157,6 +5548,23 @@ function QsPaymentWorkspace({ payload, updateRecord }) {
       meta: timelineStamp(payment.subcon),
     },
   ]);
+  const extractedFields = [
+    ...qsExtractedFields,
+    { label: "Adjustment", value: "$0" },
+    { label: "Delivery note", value: linkedOrder ? `DN-${linkedOrder.id.slice(-4)}` : "DN-6651" },
+  ];
+
+  function openProcurementRecord(kind) {
+    if (navigateToView) {
+      navigateToView("procurement");
+    }
+
+    if (!openPageWorkspace || !linkedOrder) {
+      return;
+    }
+
+    openPageWorkspace(kind, { record: linkedOrder }, "procurement");
+  }
 
   function certify() {
     setStep(4);
@@ -4214,7 +5622,7 @@ function QsPaymentWorkspace({ payload, updateRecord }) {
       <div className="workspace-content-grid">
         <div className="workspace-stack">
           <DrawerSection title="OCR extraction">
-            <MetaGrid items={qsExtractedFields} />
+            <MetaGrid items={extractedFields} />
           </DrawerSection>
           <DrawerSection title="Commercial review">
             <Field label="Review note" wide>
@@ -4246,11 +5654,56 @@ function QsPaymentWorkspace({ payload, updateRecord }) {
                 { label: "Work", value: payment.work },
                 { label: "Amount", value: payment.amount },
                 { label: "Status", value: status },
+                { label: "Delivery note", value: deliveryNoteStatus },
                 ...(linkedOrder
                   ? [{ label: "Linked PO", value: linkedOrder.id }]
                   : []),
               ]}
             />
+          </DrawerSection>
+          <DrawerSection title="Linked workflow records">
+            <div className="workspace-table-list">
+              {linkedOrder ? (
+                <>
+                  <button
+                    className="workspace-table-row"
+                    type="button"
+                    onClick={() => openProcurementRecord("procurementOrder")}
+                  >
+                    <div>
+                      <p className="workspace-info-title">{linkedOrder.id}</p>
+                      <p className="workspace-info-detail">
+                        Procurement PO and commercial issue history
+                      </p>
+                    </div>
+                    <div className="workspace-info-meta">
+                      <span className={`workspace-badge ${statusClass(linkedOrder.status)}`}>
+                        {linkedOrder.status}
+                      </span>
+                    </div>
+                  </button>
+                  <button
+                    className="workspace-table-row"
+                    type="button"
+                    onClick={() => openProcurementRecord("procurementDelivery")}
+                  >
+                    <div>
+                      <p className="workspace-info-title">Delivery note / GRN</p>
+                      <p className="workspace-info-detail">
+                        Site receiving record linked into payment certificate review
+                      </p>
+                    </div>
+                    <div className="workspace-info-meta">
+                      <span>{deliveryNoteStatus}</span>
+                    </div>
+                  </button>
+                </>
+              ) : (
+                <div className="workspace-note">
+                  <p>No linked procurement record resolved for this payment certificate.</p>
+                </div>
+              )}
+            </div>
           </DrawerSection>
           <DrawerSection title="Audit trail">
             <Timeline items={timeline} />
@@ -4301,6 +5754,10 @@ export function ActiveWorkspace(props) {
       return <ImsPermitWorkspace {...props} payload={workspace.payload} />;
     case "imsInspection":
       return <ImsInspectionWorkspace {...props} payload={workspace.payload} />;
+    case "environmentalTraining":
+      return <EnvironmentalTrainingWorkspace {...props} payload={workspace.payload} />;
+    case "environmentalPack":
+      return <EnvironmentalPackWorkspace {...props} payload={workspace.payload} />;
     case "plantJobSheet":
       return <PlantJobSheetWorkspace {...props} payload={workspace.payload} />;
     case "plantTransfer":

@@ -23,10 +23,24 @@ export default function QsPage() {
   const payments = qsPayments.map((payment) =>
     resolveRecord("qsPayments", payment)
   );
+  const procurementRecords = procurementOrders.map((order) =>
+    resolveRecord("procurementOrders", order)
+  );
 
   const payment = payments[selectedPayment];
+  const linkedOrder =
+    procurementRecords.find((order) => order.step >= 5) ||
+    procurementRecords.find((order) => order.step >= 4) ||
+    procurementRecords[0];
   const openPaymentPage = (record) =>
-    openPageWorkspace("qsPayment", { record }, "qs");
+    openPageWorkspace(
+      "qsPayment",
+      {
+        linkedOrder,
+        record,
+      },
+      "qs"
+    );
   const openQsInfoBoard = (title, subtitle, items, badge, badgeTone = "info") =>
     openWorkspace("infoBoard", {
       moduleLabel: "QS",
@@ -73,7 +87,7 @@ export default function QsPage() {
                   openPageWorkspace(
                     "qsPayment",
                     {
-                      linkedOrder: procurementOrders[0],
+                      linkedOrder,
                       record: payment,
                     },
                     "qs"

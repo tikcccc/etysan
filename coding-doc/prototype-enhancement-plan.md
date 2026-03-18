@@ -366,12 +366,12 @@
 ### 第一阶段补充：支持型页面
 
 - HR certificate upload / expiry reminder / site access flag（已通过 worker profile + linked HR profile 部分接入）
-- DMS upload / review / share / watermark（下一轮优先补）
-- Environmental permit / renewal tracking（排在 DMS 之后）
+- DMS upload / review / share / watermark（已收敛为正式产品页，并接入 supporting workflow）
+- Environmental permit / renewal tracking（已完成独立模块页与 supporting workspace）
+- Safety incident two-stage report（已收口为正式 supporting workspace）
 
 ### 第二阶段：Demo 之后再补
 
-- Safety incident two-stage report（降级后的补充故事，排在 DMS / Environmental permit 之后）
 - Role switch / RBAC 视角
 - Plant job sheet / transfer
 - Email / SSO / API 等技术型演示包装
@@ -404,7 +404,11 @@
 - `StorySpotlight` 的默认 `Primary workflow` 文字已取消，改成按模块显式命名，避免多个产品页首屏重复同一层级标签。
 - [`src/components/DmsPage.jsx`](../src/components/DmsPage.jsx) 已收敛成更清楚的正式产品页，去掉重复的 folder card / 说明堆叠，改成 `library -> category -> controlled register -> current record` 的主阅读路径。
 - Environmental 已从 [`src/components/ImsPage.jsx`](../src/components/ImsPage.jsx) 的混合页签中拆出，新增独立的 [`src/components/EnvironmentalPage.jsx`](../src/components/EnvironmentalPage.jsx)，并在 [`src/App.jsx`](../src/App.jsx)、[`src/components/Sidebar.jsx`](../src/components/Sidebar.jsx)、[`src/components/ModuleLauncher.jsx`](../src/components/ModuleLauncher.jsx)、[`src/components/Topbar.jsx`](../src/components/Topbar.jsx) 接入为正式页面入口。
+- Environmental 首页已切到和其他模块一致的 `module-page` 节奏，页名统一改成 `Environmental Management`，并在 [`src/components/EnvironmentalPage.jsx`](../src/components/EnvironmentalPage.jsx)、[`src/components/Topbar.jsx`](../src/components/Topbar.jsx)、[`src/components/WorkspacePage.jsx`](../src/components/WorkspacePage.jsx) 对齐标题与返回文案。
 - [`src/data/ims.js`](../src/data/ims.js) 已补 permit / CNP lifecycle 所需的 `site`、`owner`、`lifecycleStage`、`nextAction`、`pack` 等假资料字段，支持环保模块首屏直接展示 `application / authority review / active / renewal`。
+- [`src/components/WorkspaceDrawer.jsx`](../src/components/WorkspaceDrawer.jsx) 已把 `imsPermit`、`imsInspection` 重做成正式 full-page workspace，并补上 `environmentalTraining`、`environmentalPack` supporting workspace，让 `permit -> inspection -> training -> control pack -> DMS` 的链路直接走通。
+- [`src/components/WorkspaceDrawer.jsx`](../src/components/WorkspaceDrawer.jsx) 已把 `safetyIncident` 从原先的轻表单页收口为正式 detail workspace，补齐 `preliminary -> investigation / RCA -> close-out`、linked worker / toolbox talk / approval route、incident pack documents -> DMS。
+- [`src/data/safety.js`](../src/data/safety.js) 已补 Safety incident 所需的 `site`、`workerId`、`reportedBy`、`immediateAction`、`rootCause`、`correctiveAction`、`linkedApproval`、`linkedTraining` 等假资料字段。
 - 首页文案已在 [`src/components/Topbar.jsx`](../src/components/Topbar.jsx) 收敛成 demo 导向，相关样式已集中到 [`src/styles.css`](../src/styles.css)。
 - 验证已完成：`npm run build` 通过。
 
@@ -413,14 +417,16 @@
 - 完成“主故事入口”：首页和模块首页都能更直接进入客户要看的主路径。
 - 完成“首屏层次”：模块首页先讲 spotlight，再展开 supporting content，避免客户先看到次要 KPI 和列表。
 - HR 已从独立大故事降为 Safety worker profile 的 supporting module，并通过 linked HR profile 承接证书、培训与转场信息。
-- 完成“产品页分级”：Environmental 不再和 Quality 共用一个 IMS 页签，而是提升成独立 permit 产品页；IMS 本身则回到 `Complaint -> CAR -> Closure` 的质量闭环。
+- 完成“产品页分级”：Environmental 不再和 Quality 共用一个 IMS 页签，而是提升成独立 `Environmental Management` 产品页；IMS 本身则回到 `Complaint -> CAR -> Closure` 的质量闭环。
+- 完成“supporting story 收口”：Environmental permit / inspection / training / control pack 与 Safety incident 都已提升成正式 workspace，不再只是列表后的轻表单。
+- 完成“跨模块链路”：现在可以直接演示 `permit -> inspection -> training -> control pack -> DMS`，以及 `incident -> worker profile -> toolbox talk -> approval / DMS` 两条 supporting workflow。
 - 完成“信息减量”：DMS 首屏删掉重复说明和重复分组，只保留最关键的库切换、分类、记录列表与当前记录预览。
 
 ### 9.3 下一步收口顺序
 
-- DMS / Environmental：继续补强 page workspace 与 linked record 的细节，让 supporting story 和主故事之间的跳转更像最终产品。
-- Safety incident：保留为降级后的补充故事，排在当前主故事收口之后。
+- Demo path QA：把 6 条主故事和新增的 Environmental / Safety supporting path 再完整走一遍，确认没有 dead CTA、命名回退或状态不同步。
 - Plant / 其他 supporting module：维持现状，等客户 Demo 第一轮反馈后再决定是否继续加深。
+- Role switch / RBAC 与技术型包装：继续维持第二阶段，不提前占用这一轮 Demo 时间。
 
 ## 10. 总结
 

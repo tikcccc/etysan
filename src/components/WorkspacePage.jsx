@@ -2,7 +2,7 @@ import { ActiveWorkspace } from "./WorkspaceDrawer.jsx";
 
 const viewLabels = {
   dms: "Document Management",
-  environmental: "Environmental permit control",
+  environmental: "Environmental Management",
   hr: "Human Resources",
   home: "Home",
   ims: "IMS",

@@ -30,7 +30,10 @@ export default function ProcurementPage() {
   );
 
   const order = orders[selectedOrder];
-  const deliveryDemoOrder = orders.find((item) => item.step >= 4) || order;
+  const deliveryDemoOrder =
+    orders.find((item) => item.step === 4) ||
+    orders.find((item) => item.step >= 4) ||
+    order;
   const openRequisitionPage = () =>
     openPageWorkspace("procurementRequisition", {}, "procurement");
   const openOrderPage = (record) =>
@@ -60,12 +63,12 @@ export default function ProcurementPage() {
           <div className="module-main">
             <StorySpotlight
               eyebrow="Three-way match"
-              title="PR to delivery verification"
+              title="PR to delivery and three-way match"
               description="Route requisitions through approval, delivery note verification, and three-way match handover to QS."
               tags={["Delivery Note", "GRN", "Invoice variance"]}
               primaryAction={{
-                label: "Open delivery match",
-                onClick: () => openOrderPage(deliveryDemoOrder),
+                label: "Open delivery and match",
+                onClick: () => openDeliveryPage(deliveryDemoOrder),
               }}
               secondaryAction={{
                 label: "Start requisition",

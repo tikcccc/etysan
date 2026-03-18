@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { imsPermits, imsTraining, imsInspections } from "../data/ims.js";
+import { imsPermits, imsInspections } from "../data/ims.js";
 import { useWorkspace } from "../context/WorkspaceContext.jsx";
 import StorySpotlight from "./StorySpotlight.jsx";
 
@@ -52,7 +52,7 @@ function matchesStatusFilter(permit, activeStatus) {
 }
 
 export default function EnvironmentalPage() {
-  const { openPageWorkspace, openWorkspace, resolveRecord } = useWorkspace();
+  const { openPageWorkspace, resolveRecord } = useWorkspace();
   const [activeType, setActiveType] = useState("all");
   const [activeStatus, setActiveStatus] = useState(statusFilters[0]);
   const [selectedPermitId, setSelectedPermitId] = useState("GW-RN0122");
@@ -161,43 +161,26 @@ export default function EnvironmentalPage() {
 
   const openPermitPage = (record = selectedPermit) =>
     openPageWorkspace("imsPermit", record ? { record } : {}, "environmental");
-  const openInspectionPage = (record = inspectionRecords[0]) =>
-    openPageWorkspace("imsInspection", record ? { record } : {}, "environmental");
-  const openTrainingBoard = () =>
-    openWorkspace("infoBoard", {
-      moduleLabel: "Environmental",
-      title: "Environmental training roster",
-      subtitle: "Upcoming drills and completed briefings linked to permit controls.",
-      badge: `${imsTraining.length} sessions`,
-      sections: [
-        {
-          title: "Training records",
-          items: imsTraining.map((item) => ({
-            title: item.title,
-            detail: item.date,
-            meta: item.action,
-          })),
-        },
-      ],
-    });
-  const openPermitBoard = () =>
-    openWorkspace("infoBoard", {
-      moduleLabel: "Environmental",
-      title: "Permit control pack",
-      subtitle: "Current pack components, linked inspection evidence, and reminder routing.",
-      badge: selectedPermit?.id || "Permit",
-      badgeTone: "review",
-      sections: [
-        {
-          title: "Control pack",
-          items: (selectedPermit?.pack || []).map((item) => ({
-            title: item,
-            detail: selectedPermit?.type || "Environmental permit",
-            meta: selectedPermit?.nextAction || "Next action pending",
-          })),
-        },
-      ],
-    });
+  const openInspectionPage = (record = null, permit = selectedPermit) => {
+    const nextRecord =
+      record ||
+      inspectionRecords.find((item) => item.id === permit?.linkedInspection) ||
+      inspectionRecords[0];
+
+    openPageWorkspace("imsInspection", nextRecord ? { record: nextRecord } : {}, "environmental");
+  };
+  const openTrainingPage = (permit = selectedPermit) =>
+    openPageWorkspace(
+      "environmentalTraining",
+      permit ? { permit } : {},
+      "environmental"
+    );
+  const openPermitBoard = (permit = selectedPermit) =>
+    openPageWorkspace(
+      "environmentalPack",
+      permit ? { permit } : {},
+      "environmental"
+    );
   const resetFilters = () => {
     setActiveType("all");
     setActiveStatus(statusFilters[0]);
@@ -205,10 +188,13 @@ export default function EnvironmentalPage() {
   };
 
   return (
-    <section className="environmental environmental-page" aria-label="Environmental permit control">
+    <section
+      className="module-page environmental environmental-page"
+      aria-label="Environmental management"
+    >
       <StorySpotlight
-        eyebrow="Environmental permit control"
-        title="Permit and CNP lifecycle workspace"
+        eyebrow="Environmental management"
+        title="Environmental permit and CNP lifecycle"
         description="Track application pack, authority review, active validity, and renewal handoff in one controlled register linked to inspection evidence."
         tags={["CNP", "Renewal control", "Validity register"]}
         primaryAction={{
@@ -216,8 +202,8 @@ export default function EnvironmentalPage() {
           onClick: () => openPermitPage(cnpPermit),
         }}
         secondaryAction={{
-          label: "Open permit pack",
-          onClick: openPermitBoard,
+          label: "Open control pack",
+          onClick: () => openPermitBoard(cnpPermit),
         }}
         metrics={[
           { label: "Focus permit", value: cnpPermit?.id || "GW-RN0122" },
@@ -228,7 +214,7 @@ export default function EnvironmentalPage() {
 
       <div className="dms-command environmental-command">
         <div>
-          <p className="eyebrow">Product workspace</p>
+          <p className="eyebrow">Environmental workspace</p>
           <div
             className="dms-view-toggle dms-library-toggle"
             role="tablist"
@@ -257,10 +243,18 @@ export default function EnvironmentalPage() {
           <button className="primary-button" type="button" onClick={() => openPermitPage(cnpPermit)}>
             Start renewal pack
           </button>
-          <button className="ghost-button" type="button" onClick={() => openInspectionPage()}>
+          <button
+            className="ghost-button"
+            type="button"
+            onClick={() => openInspectionPage(null, cnpPermit)}
+          >
             Inspection board
           </button>
-          <button className="ghost-button" type="button" onClick={openTrainingBoard}>
+          <button
+            className="ghost-button"
+            type="button"
+            onClick={() => openTrainingPage(cnpPermit)}
+          >
             Training roster
           </button>
         </div>
@@ -407,11 +401,26 @@ export default function EnvironmentalPage() {
                 <button className="primary-button" type="button" onClick={() => openPermitPage(selectedPermit)}>
                   Open lifecycle
                 </button>
-                <button className="ghost-button" type="button" onClick={() => openInspectionPage()}>
+                <button
+                  className="ghost-button"
+                  type="button"
+                  onClick={() => openInspectionPage(null, selectedPermit)}
+                >
                   Latest inspection
                 </button>
-                <button className="ghost-button" type="button" onClick={openTrainingBoard}>
+                <button
+                  className="ghost-button"
+                  type="button"
+                  onClick={() => openTrainingPage(selectedPermit)}
+                >
                   Training record
+                </button>
+                <button
+                  className="ghost-button"
+                  type="button"
+                  onClick={() => openPermitBoard(selectedPermit)}
+                >
+                  Control pack
                 </button>
               </div>
 
@@ -449,19 +458,38 @@ export default function EnvironmentalPage() {
               <div className="preview-section">
                 <p className="panel-label">Linked records</p>
                 <div className="environmental-linked-list">
-                  <button className="list-row list-row-button" type="button" onClick={() => openInspectionPage()}>
+                  <button
+                    className="list-row list-row-button"
+                    type="button"
+                    onClick={() => openInspectionPage(null, selectedPermit)}
+                  >
                     <div>
                       <p className="list-title">{selectedPermit.linkedInspection}</p>
                       <p className="list-meta">Inspection evidence</p>
                     </div>
                     <span className="data-link">Open</span>
                   </button>
-                  <button className="list-row list-row-button" type="button" onClick={openTrainingBoard}>
+                  <button
+                    className="list-row list-row-button"
+                    type="button"
+                    onClick={() => openTrainingPage(selectedPermit)}
+                  >
                     <div>
                       <p className="list-title">{selectedPermit.linkedTraining}</p>
                       <p className="list-meta">Training / briefing record</p>
                     </div>
                     <span className="data-link">View</span>
+                  </button>
+                  <button
+                    className="list-row list-row-button"
+                    type="button"
+                    onClick={() => openPermitBoard(selectedPermit)}
+                  >
+                    <div>
+                      <p className="list-title">Environmental control pack</p>
+                      <p className="list-meta">Linked DMS issue and renewal documents</p>
+                    </div>
+                    <span className="data-link">Open</span>
                   </button>
                 </div>
               </div>

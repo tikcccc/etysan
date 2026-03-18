@@ -12,13 +12,28 @@ const inspectionStory = {
 };
 
 export default function DemoPathways() {
-  const { navigateToView, openPageWorkspace } = useWorkspace();
+  const { navigateToView, openPageWorkspace, resolveRecord } = useWorkspace();
   const transferredWorker = workers.find((worker) => worker.name === "Chan Tai Man") || workers[0];
+  const procurementRecords = procurementOrders.map((order) =>
+    resolveRecord("procurementOrders", order)
+  );
+  const complaintRecords = imsComplaints.map((record) =>
+    resolveRecord("imsComplaints", record)
+  );
+  const paymentRecords = qsPayments.map((record) =>
+    resolveRecord("qsPayments", record)
+  );
   const deliveryOrder =
-    procurementOrders.find((order) => order.step >= 4) || procurementOrders[0];
+    procurementRecords.find((order) => order.step === 4) ||
+    procurementRecords.find((order) => order.step >= 4) ||
+    procurementRecords[0];
+  const paymentOrder =
+    procurementRecords.find((order) => order.step >= 5) ||
+    procurementRecords.find((order) => order.step >= 4) ||
+    procurementRecords[0];
   const openComplaint =
-    imsComplaints.find((record) => record.status === "Open") || imsComplaints[0];
-  const openPayment = qsPayments[0];
+    complaintRecords.find((record) => record.status === "Open") || complaintRecords[0];
+  const openPayment = paymentRecords[0];
 
   const stories = [
     {
@@ -48,7 +63,7 @@ export default function DemoPathways() {
     {
       id: "procurement-match",
       module: "Procurement",
-      title: "PR to three-way match",
+      title: "PR to delivery and three-way match",
       detail:
         "Route requisitions into delivery verification and invoice variance control before QS handover.",
       highlights: ["Delivery note / GRN", "Invoice variance", "QS handover"],
@@ -56,7 +71,7 @@ export default function DemoPathways() {
     {
       id: "complaint-car",
       module: "IMS",
-      title: "Complaint to CAR",
+      title: "Complaint to CAR closure",
       detail:
         "Register complaints, assign investigation, issue CAR, and close with signed records.",
       highlights: ["Investigator", "Root cause", "E-sign close"],
@@ -83,7 +98,7 @@ export default function DemoPathways() {
         openPageWorkspace("safetyInspection", { record: inspectionStory }, "safety");
         return;
       case "procurement-match":
-        openPageWorkspace("procurementOrder", { record: deliveryOrder }, "procurement");
+        openPageWorkspace("procurementDelivery", { record: deliveryOrder }, "procurement");
         return;
       case "complaint-car":
         openPageWorkspace("imsComplaint", { record: openComplaint }, "ims");
@@ -92,7 +107,7 @@ export default function DemoPathways() {
         openPageWorkspace(
           "qsPayment",
           {
-            linkedOrder: procurementOrders[0],
+            linkedOrder: paymentOrder,
             record: openPayment,
           },
           "qs"

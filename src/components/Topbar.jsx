@@ -19,8 +19,8 @@ const viewMeta = {
   },
   environmental: {
     eyebrow: "Environmental",
-    title: "Permit Control",
-    subtitle: "Environmental permit register, CNP lifecycle, and renewal control.",
+    title: "Environmental Management",
+    subtitle: "Permits, CNP lifecycle, inspections, training, and renewal control.",
   },
   safety: {
     eyebrow: "Safety",
