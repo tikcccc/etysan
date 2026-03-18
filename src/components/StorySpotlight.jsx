@@ -1,7 +1,7 @@
 export default function StorySpotlight({
-  eyebrow = "Primary workflow",
+  eyebrow = null,
   title,
-  description,
+  description = "",
   tags = [],
   primaryAction = null,
   secondaryAction = null,
@@ -11,9 +11,11 @@ export default function StorySpotlight({
     <section className="story-spotlight" aria-label={title}>
       <div className="story-spotlight-main">
         <div>
-          <p className="panel-label">{eyebrow}</p>
+          {eyebrow ? <p className="panel-label">{eyebrow}</p> : null}
           <h3>{title}</h3>
-          <p className="story-spotlight-description">{description}</p>
+          {description ? (
+            <p className="story-spotlight-description">{description}</p>
+          ) : null}
         </div>
         {tags.length ? (
           <div className="story-spotlight-tags">

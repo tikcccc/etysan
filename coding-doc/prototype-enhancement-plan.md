@@ -401,6 +401,10 @@
 - Safety 已新增真正属于主故事的 [`safetyWorkerProfile`](../src/components/WorkspaceDrawer.jsx) 页面，并在 [`src/components/SafetyPage.jsx`](../src/components/SafetyPage.jsx) 的主 CTA 与 worker registry 上改成直达该故事。
 - `Immediate work stoppage` 已补 `PM notified` / `Escalation pending` 级别的前端提示。
 - [`src/components/StorySpotlight.jsx`](../src/components/StorySpotlight.jsx) 已接入 [`src/components/ProcurementPage.jsx`](../src/components/ProcurementPage.jsx)、[`src/components/QsPage.jsx`](../src/components/QsPage.jsx)、[`src/components/ImsPage.jsx`](../src/components/ImsPage.jsx)、[`src/components/HrPage.jsx`](../src/components/HrPage.jsx)，把客户要看的主路径提升到模块首页首屏。
+- `StorySpotlight` 的默认 `Primary workflow` 文字已取消，改成按模块显式命名，避免多个产品页首屏重复同一层级标签。
+- [`src/components/DmsPage.jsx`](../src/components/DmsPage.jsx) 已收敛成更清楚的正式产品页，去掉重复的 folder card / 说明堆叠，改成 `library -> category -> controlled register -> current record` 的主阅读路径。
+- Environmental 已从 [`src/components/ImsPage.jsx`](../src/components/ImsPage.jsx) 的混合页签中拆出，新增独立的 [`src/components/EnvironmentalPage.jsx`](../src/components/EnvironmentalPage.jsx)，并在 [`src/App.jsx`](../src/App.jsx)、[`src/components/Sidebar.jsx`](../src/components/Sidebar.jsx)、[`src/components/ModuleLauncher.jsx`](../src/components/ModuleLauncher.jsx)、[`src/components/Topbar.jsx`](../src/components/Topbar.jsx) 接入为正式页面入口。
+- [`src/data/ims.js`](../src/data/ims.js) 已补 permit / CNP lifecycle 所需的 `site`、`owner`、`lifecycleStage`、`nextAction`、`pack` 等假资料字段，支持环保模块首屏直接展示 `application / authority review / active / renewal`。
 - 首页文案已在 [`src/components/Topbar.jsx`](../src/components/Topbar.jsx) 收敛成 demo 导向，相关样式已集中到 [`src/styles.css`](../src/styles.css)。
 - 验证已完成：`npm run build` 通过。
 
@@ -409,12 +413,14 @@
 - 完成“主故事入口”：首页和模块首页都能更直接进入客户要看的主路径。
 - 完成“首屏层次”：模块首页先讲 spotlight，再展开 supporting content，避免客户先看到次要 KPI 和列表。
 - HR 已从独立大故事降为 Safety worker profile 的 supporting module，并通过 linked HR profile 承接证书、培训与转场信息。
+- 完成“产品页分级”：Environmental 不再和 Quality 共用一个 IMS 页签，而是提升成独立 permit 产品页；IMS 本身则回到 `Complaint -> CAR -> Closure` 的质量闭环。
+- 完成“信息减量”：DMS 首屏删掉重复说明和重复分组，只保留最关键的库切换、分类、记录列表与当前记录预览。
 
 ### 9.3 下一步收口顺序
 
-- DMS：补强 `upload / review / share / watermark`，作为主故事里的 supporting record。
-- Environmental：补 `permit / CNP lifecycle`，让环保模块也有清晰的 permit 主路径。
-- Safety incident：保留为降级后的补充故事，放在上述两项之后。
+- DMS / Environmental：继续补强 page workspace 与 linked record 的细节，让 supporting story 和主故事之间的跳转更像最终产品。
+- Safety incident：保留为降级后的补充故事，排在当前主故事收口之后。
+- Plant / 其他 supporting module：维持现状，等客户 Demo 第一轮反馈后再决定是否继续加深。
 
 ## 10. 总结
 

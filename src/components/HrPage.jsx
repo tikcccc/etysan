@@ -86,6 +86,7 @@ export default function HrPage() {
         <div className="module-layout">
           <div className="module-main">
             <StorySpotlight
+              eyebrow="Cross-site profile"
               title="Cross-site worker compliance view"
               description="Consolidate certificates, training history, and site movement in one worker profile."
               tags={["Green Card", "Transfer history", "Expiry alerts"]}

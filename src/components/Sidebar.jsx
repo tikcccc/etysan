@@ -70,7 +70,8 @@ export default function Sidebar({ activeView = "home", onViewChange }) {
                 (item === "Plant" && activeView === "plant") ||
                 (item === "QS" && activeView === "qs") ||
                 (item === "HR" && activeView === "hr") ||
-                (item === "IMS" && activeView === "ims")
+                (item === "IMS" && activeView === "ims") ||
+                (item === "Environmental" && activeView === "environmental")
                   ? "active"
                   : ""
               }`}
@@ -96,6 +97,9 @@ export default function Sidebar({ activeView = "home", onViewChange }) {
                 }
                 if (item === "IMS") {
                   onViewChange?.("ims");
+                }
+                if (item === "Environmental") {
+                  onViewChange?.("environmental");
                 }
               }}
             >

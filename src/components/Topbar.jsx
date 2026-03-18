@@ -17,6 +17,11 @@ const viewMeta = {
     title: "Document Management",
     subtitle: "Project and safety records in one controlled workspace.",
   },
+  environmental: {
+    eyebrow: "Environmental",
+    title: "Permit Control",
+    subtitle: "Environmental permit register, CNP lifecycle, and renewal control.",
+  },
   safety: {
     eyebrow: "Safety",
     title: "Safety Management",
@@ -45,7 +50,7 @@ const viewMeta = {
   ims: {
     eyebrow: "IMS",
     title: "IMS Management",
-    subtitle: "Quality complaints, permits, and environmental inspections.",
+    subtitle: "Client complaints, CAR follow-up, and closure audit trail.",
   },
 };
 

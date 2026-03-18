@@ -19,6 +19,7 @@ import ProcurementPage from "./components/ProcurementPage.jsx";
 import HrPage from "./components/HrPage.jsx";
 import PlantPage from "./components/PlantPage.jsx";
 import ImsPage from "./components/ImsPage.jsx";
+import EnvironmentalPage from "./components/EnvironmentalPage.jsx";
 import WorkspaceDrawer from "./components/WorkspaceDrawer.jsx";
 import WorkspacePage from "./components/WorkspacePage.jsx";
 import { WorkspaceContext } from "./context/WorkspaceContext.jsx";
@@ -154,6 +155,7 @@ export default function App() {
             {!pageWorkspace && activeView === "hr" ? <HrPage /> : null}
             {!pageWorkspace && activeView === "plant" ? <PlantPage /> : null}
             {!pageWorkspace && activeView === "ims" ? <ImsPage /> : null}
+            {!pageWorkspace && activeView === "environmental" ? <EnvironmentalPage /> : null}
           </main>
         </div>
       </div>

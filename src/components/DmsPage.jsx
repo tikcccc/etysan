@@ -6,7 +6,6 @@ import {
   dmsApprovals,
   dmsMeta,
   dmsExternalAccess,
-  dmsFolderCards,
 } from "../data/dms.js";
 import { useWorkspace } from "../context/WorkspaceContext.jsx";
 import StorySpotlight from "./StorySpotlight.jsx";
@@ -17,7 +16,6 @@ const statusFilters = [
   "Pending",
   "Approved",
   "External",
-  "Archived",
 ];
 const viewModes = ["List", "Grid"];
 
@@ -70,15 +68,14 @@ function parseSizeValue(value = "") {
 
 export default function DmsPage() {
   const { openPageWorkspace, openWorkspace, resolveRecord } = useWorkspace();
-  const [activeLibrary, setActiveLibrary] = useState(
-    dmsLibraries[0]?.id || "project"
-  );
+  const [activeLibrary, setActiveLibrary] = useState(dmsLibraries[0]?.id || "project");
   const [selectedDocId, setSelectedDocId] = useState(null);
   const [activeStatusFilter, setActiveStatusFilter] = useState(statusFilters[0]);
   const [viewMode, setViewMode] = useState(viewModes[0]);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortMode, setSortMode] = useState("Updated");
   const [activeCategory, setActiveCategory] = useState(null);
+
   const libraryDocuments = dmsDocuments
     .map((doc) => resolveRecord("dmsDocuments", doc))
     .filter((doc) => doc.library?.toLowerCase() === activeLibrary);
@@ -97,8 +94,6 @@ export default function DmsPage() {
           return doc.status === "Approved";
         case "External":
           return doc.status === "External";
-        case "Archived":
-          return doc.status === "Archive";
         default:
           return true;
       }
@@ -110,13 +105,7 @@ export default function DmsPage() {
         return true;
       }
 
-      return [
-        doc.title,
-        doc.id,
-        doc.owner,
-        doc.category,
-        doc.phase,
-      ]
+      return [doc.title, doc.id, doc.owner, doc.category, doc.phase]
         .filter(Boolean)
         .some((value) => value.toLowerCase().includes(keyword));
     })
@@ -133,43 +122,36 @@ export default function DmsPage() {
       }
     });
   const selectedDoc =
-    filteredDocuments.find((doc) => doc.id === selectedDocId) ??
-    filteredDocuments[0] ??
-    libraryDocuments[0] ??
+    filteredDocuments.find((doc) => doc.id === selectedDocId) ||
+    filteredDocuments[0] ||
+    libraryDocuments[0] ||
     dmsDocuments[0];
-  const activeLibraryLabel =
-    dmsLibraries.find((library) => library.id === activeLibrary)?.label ||
-    "Project DMS";
   const reviewDocument =
-    libraryDocuments.find(
-      (doc) => doc.status === "Review" || doc.status === "Pending"
-    ) ?? selectedDoc;
+    libraryDocuments.find((doc) => doc.status === "Review" || doc.status === "Pending") ||
+    selectedDoc;
+  const activeLibraryLabel =
+    dmsLibraries.find((library) => library.id === activeLibrary)?.label || "Project DMS";
   const signalCards = [
     {
       label: "Needs review",
       value: `${libraryDocuments.filter((doc) => doc.status === "Review").length}`,
-      note: "Controlled copies awaiting reviewer action",
+      note: "Controlled copies waiting for reviewer action",
     },
     {
       label: "Pending approval",
       value: `${libraryDocuments.filter((doc) => doc.status === "Pending").length}`,
-      note: "Records queued for release approval",
+      note: "Queued for controlled release approval",
     },
     {
-      label: "Secure issue",
+      label: "External links",
       value: `${libraryDocuments.filter((doc) => doc.externalAccess !== "None").length}`,
-      note: "Links under expiry and watermark control",
+      note: "Issued with expiry and watermark control",
     },
     {
-      label: "Indexed records",
+      label: "OCR indexed",
       value: `${libraryDocuments.filter((doc) => doc.ocr).length}`,
-      note: "Searchable metadata and OCR available",
+      note: "Search-ready records in this library",
     },
-  ];
-  const breadcrumbs = [
-    activeLibraryLabel,
-    selectedDoc?.phase ?? "All phases",
-    activeCategory ?? selectedDoc?.category ?? "All categories",
   ];
   const detailMeta = selectedDoc
     ? [
@@ -178,29 +160,18 @@ export default function DmsPage() {
         { label: "Phase", value: selectedDoc.phase },
         { label: "Library", value: `${selectedDoc.library} DMS` },
         ...dmsMeta,
-        { label: "External Access", value: selectedDoc.externalAccess },
+        { label: "External access", value: selectedDoc.externalAccess },
       ]
     : [];
   const hasActiveFilters =
     Boolean(activeCategory) ||
     activeStatusFilter !== statusFilters[0] ||
     searchQuery.trim().length > 0;
+
   const openUploadPage = () =>
-    openPageWorkspace(
-      "dmsUpload",
-      {
-        library: activeLibraryLabel,
-      },
-      "dms"
-    );
-  const openReviewPage = (record) =>
+    openPageWorkspace("dmsUpload", { library: activeLibraryLabel }, "dms");
+  const openReviewPage = (record = reviewDocument) =>
     openPageWorkspace("dmsReview", { record }, "dms");
-  const resetFilters = () => {
-    setActiveCategory(null);
-    setActiveStatusFilter(statusFilters[0]);
-    setSearchQuery("");
-    setSelectedDocId(null);
-  };
   const openDownloadBoard = (record) =>
     openWorkspace("infoBoard", {
       badge: record.type,
@@ -221,17 +192,85 @@ export default function DmsPage() {
       subtitle: "Document export request with controlled issue safeguards.",
       title: "File export",
     });
+  const openReviewBoard = () =>
+    openWorkspace("infoBoard", {
+      badge: `${dmsApprovals.length} routed`,
+      badgeTone: "review",
+      moduleLabel: "Document Management",
+      sections: [
+        {
+          title: "Controlled review queue",
+          items: dmsApprovals.map((step) => ({
+            title: step.name,
+            detail: step.step,
+            badge: step.status,
+            badgeTone:
+              step.status === "Approved"
+                ? "approved"
+                : step.status === "Pending"
+                  ? "review"
+                  : "muted",
+          })),
+        },
+      ],
+      subtitle: "Reviewer and approver handoff for controlled document issue.",
+      title: "Review queue",
+    });
+  const openSharedBoard = () =>
+    openWorkspace("infoBoard", {
+      badge: "Shared",
+      badgeTone: "review",
+      moduleLabel: "Document Management",
+      sections: [
+        {
+          title: "Issued links",
+          items: dmsExternalAccess.map((item) => ({
+            title: item.name,
+            detail: item.scope,
+            meta: `Expires ${item.expiry}`,
+          })),
+        },
+      ],
+      subtitle: "Externally issued records with time-bound access control.",
+      title: "Secure issue register",
+    });
+  const openExpiringBoard = () =>
+    openWorkspace("infoBoard", {
+      badge: "Expiring",
+      badgeTone: "warning",
+      moduleLabel: "Document Management",
+      sections: [
+        {
+          title: "Expiring links",
+          items: dmsExternalAccess.map((item) => ({
+            title: item.name,
+            detail: item.scope,
+            meta: `Expires ${item.expiry}`,
+            badge: item.expiry,
+            badgeTone: "warning",
+          })),
+        },
+      ],
+      subtitle: "Time-limited external links and release governance.",
+      title: "Expiring access",
+    });
+  const resetFilters = () => {
+    setActiveCategory(null);
+    setActiveStatusFilter(statusFilters[0]);
+    setSearchQuery("");
+    setSelectedDocId(null);
+  };
   const toggleCategory = (category) => {
     setActiveCategory((current) => (current === category ? null : category));
     setSelectedDocId(null);
   };
 
   return (
-    <section className="dms dms-browser">
+    <section className="dms dms-browser" aria-label="Document management">
       <StorySpotlight
         eyebrow="Document control"
-        title="Controlled issue and external release"
-        description="Register records, route approvals, and release secure links with watermark and expiry control from a single document workspace."
+        title="Controlled issue workspace"
+        description="Register, review, and release project records from one clear document register with secure issue and watermark control."
         tags={[activeLibraryLabel, "Version register", "Secure link"]}
         primaryAction={{
           label: "Create controlled issue",
@@ -242,26 +281,15 @@ export default function DmsPage() {
           onClick: () => openReviewPage(reviewDocument),
         }}
         metrics={[
-          { label: "Priority file", value: reviewDocument?.id || "DMS-2441" },
+          { label: "Priority record", value: reviewDocument?.id || "DMS-2441" },
           { label: "Release state", value: reviewDocument?.status || "Review" },
+          { label: "Shown", value: `${filteredDocuments.length}` },
         ]}
       />
 
-      <div className="kpi-bar dms-kpi-bar">
-        {signalCards.map((item) => (
-          <article key={item.label} className="kpi-card">
-            <p className="kpi-label">{item.label}</p>
-            <div className="kpi-value">
-              <h3 className="overview-value neutral">{item.value}</h3>
-            </div>
-            <p className="kpi-delta">{item.note}</p>
-          </article>
-        ))}
-      </div>
-
       <div className="dms-command">
         <div>
-          <p className="eyebrow">Library workspace</p>
+          <p className="eyebrow">Product workspace</p>
           <div
             className="dms-view-toggle dms-library-toggle"
             role="tablist"
@@ -276,102 +304,60 @@ export default function DmsPage() {
                 className={activeLibrary === library.id ? "active" : ""}
                 onClick={() => {
                   setActiveLibrary(library.id);
-                  setActiveCategory(null);
-                  setActiveStatusFilter(statusFilters[0]);
-                  setSearchQuery("");
-                  setSelectedDocId(null);
+                  resetFilters();
                 }}
               >
                 {library.label}
               </button>
             ))}
           </div>
-          <nav className="breadcrumbs" aria-label="Breadcrumb">
-            <ol>
-              {breadcrumbs.map((crumb, index) => (
-                <li
-                  key={crumb}
-                  className={index === breadcrumbs.length - 1 ? "active" : ""}
-                >
-                  {crumb}
-                </li>
-              ))}
-            </ol>
-          </nav>
           <p className="dms-path-meta">
             {libraryDocuments.length} files | {dmsCategories.length} controlled categories | Last update 2 hours ago
           </p>
         </div>
+
         <div className="dms-command-actions">
-          <div className="dms-view-toggle" role="group" aria-label="View mode">
-            {viewModes.map((mode) => (
-              <button
-                key={mode}
-                type="button"
-                className={viewMode === mode ? "active" : ""}
-                onClick={() => setViewMode(mode)}
-              >
-                {mode}
-              </button>
-            ))}
-          </div>
-          <button
-            className="primary-button"
-            type="button"
-            onClick={openUploadPage}
-          >
+          <button className="primary-button" type="button" onClick={openUploadPage}>
             Upload record
           </button>
-          <button
-            className="ghost-button"
-            type="button"
-            onClick={() =>
-              openWorkspace("infoBoard", {
-                badge: "Configured",
-                moduleLabel: "Document Management",
-                sections: [
-                  {
-                    title: "Folder templates",
-                    items: dmsCategories.slice(0, 6).map((category) => ({
-                      title: `${category.code} · ${category.name}`,
-                      detail: `${category.count} active records`,
-                      badge: "Template",
-                      badgeTone: "muted",
-                    })),
-                  },
-                ],
-                subtitle: "Controlled folder structures, record categories, and retention grouping.",
-                title: "Folder structure",
-              })
-            }
-          >
-            Folder structure
+          <button className="ghost-button" type="button" onClick={openReviewBoard}>
+            Review queue
           </button>
-          <button
-            className="ghost-button"
-            type="button"
-            onClick={() =>
-              openWorkspace("dmsShare", {
-                record: selectedDoc,
-              })
-            }
-          >
+          <button className="ghost-button" type="button" onClick={() => openSharedBoard()}>
             Secure issue
           </button>
         </div>
       </div>
 
+      <div className="dms-signal-grid">
+        {signalCards.map((item) => (
+          <article key={item.label} className="dms-signal-card">
+            <p className="kpi-label">{item.label}</p>
+            <h3 className="overview-value neutral">{item.value}</h3>
+            <p className="kpi-delta">{item.note}</p>
+          </article>
+        ))}
+      </div>
+
       <div className="dms-browser-layout">
         <aside className="dms-side">
           <div className="dms-panel dms-panel--folders">
-            <p className="panel-label">Folder tree</p>
+            <div className="dms-results-header">
+              <div>
+                <p className="panel-label">Folder groups</p>
+                <h3>Controlled categories</h3>
+              </div>
+              {activeCategory ? (
+                <button className="ghost-button" type="button" onClick={() => setActiveCategory(null)}>
+                  Clear
+                </button>
+              ) : null}
+            </div>
             <div className="folder-tree">
               {dmsCategories.map((category) => (
                 <button
                   key={category.code}
-                  className={`folder-item ${
-                    activeCategory === category.name ? "active" : ""
-                  }`}
+                  className={`folder-item ${activeCategory === category.name ? "active" : ""}`}
                   type="button"
                   onClick={() => toggleCategory(category.name)}
                 >
@@ -386,87 +372,13 @@ export default function DmsPage() {
           <div className="dms-panel">
             <p className="panel-label">Quick access</p>
             <div className="quick-links">
-              <button
-                className="quick-link"
-                type="button"
-                onClick={() =>
-                  openWorkspace("infoBoard", {
-                    badge: "Shared",
-                    badgeTone: "review",
-                    moduleLabel: "Document Management",
-                    sections: [
-                      {
-                        title: "Shared links",
-                        items: dmsExternalAccess.map((item) => ({
-                          title: item.name,
-                          detail: item.scope,
-                          meta: `Expires ${item.expiry}`,
-                        })),
-                      },
-                    ],
-                    subtitle: "Externally issued records with time-bound access control.",
-                    title: "Shared with me",
-                  })
-                }
-              >
-                Shared links
-              </button>
-              <button
-                className="quick-link"
-                type="button"
-                onClick={() =>
-                  openWorkspace("infoBoard", {
-                    badge: `${dmsApprovals.length} routed`,
-                    badgeTone: "review",
-                    moduleLabel: "Document Management",
-                    sections: [
-                      {
-                        title: "Controlled review queue",
-                        items: dmsApprovals.map((step) => ({
-                          title: step.name,
-                          detail: step.step,
-                          badge: step.status,
-                          badgeTone:
-                            step.status === "Approved"
-                              ? "approved"
-                              : step.status === "Pending"
-                                ? "review"
-                                : "muted",
-                        })),
-                      },
-                    ],
-                    subtitle: "DMS-specific review routing for controlled document issue.",
-                    title: "Pending review",
-                  })
-                }
-              >
+              <button className="quick-link" type="button" onClick={openReviewBoard}>
                 Review queue
               </button>
-              <button
-                className="quick-link"
-                type="button"
-                onClick={() =>
-                  openWorkspace("infoBoard", {
-                    badge: "Expiring",
-                    badgeTone: "warning",
-                    moduleLabel: "Document Management",
-                    sections: [
-                      {
-                        title: "Expiring access",
-                        items: dmsExternalAccess.map((item) => ({
-                          title: item.name,
-                          detail: item.scope,
-                          meta: `Expires ${item.expiry}`,
-                          badge: item.expiry,
-                          badgeTone: "warning",
-                        })),
-                      },
-                    ],
-                    subtitle: "Time-limited external links and release governance.",
-                    title: "Expiring links",
-                  })
-                }
-              >
+              <button className="quick-link" type="button" onClick={openSharedBoard}>
+                Shared links
+              </button>
+              <button className="quick-link" type="button" onClick={openExpiringBoard}>
                 Expiring access
               </button>
             </div>
@@ -485,19 +397,20 @@ export default function DmsPage() {
                 onChange={(event) => setSearchQuery(event.target.value)}
               />
             </div>
-            <div className="dms-filter-row">
-              {statusFilters.map((filter) => (
-                <button
-                  key={filter}
-                  className={`status-filter ${
-                    activeStatusFilter === filter ? "active" : ""
-                  }`}
-                  type="button"
-                  onClick={() => setActiveStatusFilter(filter)}
-                >
-                  {filter}
-                </button>
-              ))}
+
+            <div className="dms-command-actions">
+              <div className="dms-view-toggle" role="group" aria-label="View mode">
+                {viewModes.map((mode) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    className={viewMode === mode ? "active" : ""}
+                    onClick={() => setViewMode(mode)}
+                  >
+                    {mode}
+                  </button>
+                ))}
+              </div>
               <label className="filter">
                 <span>Sort</span>
                 <select value={sortMode} onChange={(event) => setSortMode(event.target.value)}>
@@ -507,32 +420,35 @@ export default function DmsPage() {
                   <option value="Size">File size</option>
                 </select>
               </label>
-              {hasActiveFilters ? (
-                <button className="ghost-button" type="button" onClick={resetFilters}>
-                  Clear filters
-                </button>
-              ) : null}
             </div>
           </div>
 
-          <div className="folder-grid">
-            {dmsFolderCards.map((folder) => (
+          <div className="dms-results-header">
+            <div>
+              <p className="panel-label">Controlled register</p>
+              <h3>{activeCategory || "All controlled records"}</h3>
+            </div>
+            <p className="dms-path-meta">
+              {filteredDocuments.length} shown in {activeLibraryLabel}
+            </p>
+          </div>
+
+          <div className="dms-filter-row">
+            {statusFilters.map((filter) => (
               <button
-                key={folder.name}
-                className={`folder-card tone-${folder.tone} ${
-                  activeCategory === folder.category ? "active" : ""
-                }`}
+                key={filter}
+                className={`status-filter ${activeStatusFilter === filter ? "active" : ""}`}
                 type="button"
-                onClick={() => toggleCategory(folder.category)}
+                onClick={() => setActiveStatusFilter(filter)}
               >
-                <div className="folder-card-head">
-                  <p className="folder-title">{folder.name}</p>
-                  <span className="folder-count-pill">{folder.count} files</span>
-                </div>
-                <p className="folder-meta">{folder.subtitle}</p>
-                <p className="folder-update">Updated {folder.updated}</p>
+                {filter}
               </button>
             ))}
+            {hasActiveFilters ? (
+              <button className="ghost-button" type="button" onClick={resetFilters}>
+                Clear filters
+              </button>
+            ) : null}
           </div>
 
           {filteredDocuments.length ? (
@@ -549,7 +465,7 @@ export default function DmsPage() {
                 {filteredDocuments.map((doc) => (
                   <article
                     key={doc.id}
-                    className={`dms-file-row ${doc.id === selectedDoc.id ? "active" : ""}`}
+                    className={`dms-file-row ${doc.id === selectedDoc?.id ? "active" : ""}`}
                     onClick={() => setSelectedDocId(doc.id)}
                     onKeyDown={(event) => {
                       if (event.key === "Enter" || event.key === " ") {
@@ -572,9 +488,7 @@ export default function DmsPage() {
                         <div className="file-tags">
                           <span className="file-tag">{doc.phase}</span>
                           {doc.ocr ? <span className="file-tag">OCR</span> : null}
-                          {doc.encrypted ? (
-                            <span className="file-tag">Encrypted</span>
-                          ) : null}
+                          {doc.encrypted ? <span className="file-tag">Encrypted</span> : null}
                         </div>
                       </div>
                     </div>
@@ -614,9 +528,7 @@ export default function DmsPage() {
                 {filteredDocuments.map((doc) => (
                   <article
                     key={doc.id}
-                    className={`dms-document-card ${
-                      doc.id === selectedDoc.id ? "active" : ""
-                    }`}
+                    className={`dms-document-card ${doc.id === selectedDoc?.id ? "active" : ""}`}
                     onClick={() => setSelectedDocId(doc.id)}
                     onKeyDown={(event) => {
                       if (event.key === "Enter" || event.key === " ") {
@@ -670,9 +582,7 @@ export default function DmsPage() {
                           type="button"
                           onClick={(event) => {
                             event.stopPropagation();
-                            openWorkspace("dmsShare", {
-                              record: doc,
-                            });
+                            openWorkspace("dmsShare", { record: doc });
                           }}
                         >
                           Issue
@@ -693,102 +603,88 @@ export default function DmsPage() {
           )}
         </section>
 
-        <aside className="dms-preview">
-          <div className="preview-card">
-            <div className="preview-header">
-              <div className={`file-icon type-${selectedDoc.type.toLowerCase()}`}>
-                {selectedDoc.type}
-              </div>
-              <div>
-                <p className="panel-label">Current record</p>
-                <h3>{selectedDoc.title}</h3>
-                <p className="preview-sub">
-                  {selectedDoc.id} | {selectedDoc.category}
-                </p>
-              </div>
-            </div>
-
-            <div className="preview-actions">
-              <button
-                className="primary-button"
-                type="button"
-                onClick={() => openReviewPage(selectedDoc)}
-              >
-                Open review
-              </button>
-              <button
-                className="ghost-button"
-                type="button"
-                onClick={() =>
-                  openWorkspace("dmsShare", {
-                    record: selectedDoc,
-                  })
-                }
-              >
-                Secure issue
-              </button>
-              <button
-                className="ghost-button"
-                type="button"
-                onClick={() => openDownloadBoard(selectedDoc)}
-              >
-                Download
-              </button>
-            </div>
-
-            <div className="preview-sheet" aria-hidden="true">
-              <div className="preview-line wide" />
-              <div className="preview-line" />
-              <div className="preview-line" />
-              <div className="preview-line short" />
-            </div>
-
-            <div className="preview-meta">
-              {detailMeta.map((item) => (
-                <div key={item.label} className="preview-meta-item">
-                  <span>{item.label}</span>
-                  <strong>{item.value}</strong>
+        {selectedDoc ? (
+          <aside className="dms-preview">
+            <div className="preview-card">
+              <div className="preview-header">
+                <div className={`file-icon type-${selectedDoc.type.toLowerCase()}`}>
+                  {selectedDoc.type}
                 </div>
-              ))}
-            </div>
+                <div>
+                  <p className="panel-label">Current record</p>
+                  <h3>{selectedDoc.title}</h3>
+                  <p className="preview-sub">
+                    {selectedDoc.id} | {selectedDoc.category}
+                  </p>
+                </div>
+              </div>
 
-            <div className="preview-section">
-              <p className="panel-label">Issue route</p>
-              <div className="approval-list">
-                {dmsApprovals.map((step) => (
-                  <div key={step.step} className="approval-row">
-                    <div>
-                      <p className="approval-step">{step.step}</p>
-                      <p className="approval-name">{step.name}</p>
-                    </div>
-                    <span
-                      className={`pill ${step.status.toLowerCase().replace(/\s/g, "-")}`}
-                    >
-                      {step.status}
-                    </span>
+              <div className="preview-actions">
+                <button className="primary-button" type="button" onClick={() => openReviewPage(selectedDoc)}>
+                  Open review
+                </button>
+                <button
+                  className="ghost-button"
+                  type="button"
+                  onClick={() => openWorkspace("dmsShare", { record: selectedDoc })}
+                >
+                  Secure issue
+                </button>
+                <button className="ghost-button" type="button" onClick={() => openDownloadBoard(selectedDoc)}>
+                  Download
+                </button>
+              </div>
+
+              <div className="preview-sheet" aria-hidden="true">
+                <div className="preview-line wide" />
+                <div className="preview-line" />
+                <div className="preview-line" />
+                <div className="preview-line short" />
+              </div>
+
+              <div className="preview-meta">
+                {detailMeta.map((item) => (
+                  <div key={item.label} className="preview-meta-item">
+                    <span>{item.label}</span>
+                    <strong>{item.value}</strong>
                   </div>
                 ))}
               </div>
-            </div>
 
-            <div className="preview-section">
-              <p className="panel-label">Access register</p>
-              <div className="external-list">
-                {dmsExternalAccess.map((item) => (
-                  <div key={item.name} className="external-item">
-                    <div>
-                      <p className="external-name">{item.name}</p>
-                      <p className="external-scope">{item.scope}</p>
+              <div className="preview-section">
+                <p className="panel-label">Issue route</p>
+                <div className="approval-list">
+                  {dmsApprovals.map((step) => (
+                    <div key={step.step} className="approval-row">
+                      <div>
+                        <p className="approval-step">{step.step}</p>
+                        <p className="approval-name">{step.name}</p>
+                      </div>
+                      <span className={`pill ${step.status.toLowerCase().replace(/\s/g, "-")}`}>
+                        {step.status}
+                      </span>
                     </div>
-                    <span className="external-expiry">
-                      Expires {item.expiry}
-                    </span>
-                  </div>
-                ))}
+                  ))}
+                </div>
+              </div>
+
+              <div className="preview-section">
+                <p className="panel-label">Access register</p>
+                <div className="external-list">
+                  {dmsExternalAccess.map((item) => (
+                    <div key={item.name} className="external-item">
+                      <div>
+                        <p className="external-name">{item.name}</p>
+                        <p className="external-scope">{item.scope}</p>
+                      </div>
+                      <span className="external-expiry">Expires {item.expiry}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
-        </aside>
+          </aside>
+        ) : null}
       </div>
     </section>
   );

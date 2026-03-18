@@ -63,6 +63,7 @@ export default function QsPage() {
         <div className="module-layout">
           <div className="module-main">
             <StorySpotlight
+              eyebrow="Payment control"
               title="Payment certificate review"
               description="Review OCR extraction, commercial comments, linked procurement records, and final certification in one certificate workspace."
               tags={["OCR extracted", "Linked PO", "Director certify"]}

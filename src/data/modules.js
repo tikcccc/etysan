@@ -32,8 +32,8 @@ export const modules = [
   {
     code: "G",
     name: "Environmental (IMS)",
-    summary: "Environmental checks and permit tracking.",
-    tags: ["Checklist", "Permits", "Reminders"],
+    summary: "Permit and CNP lifecycle with renewal control.",
+    tags: ["CNP", "Permit", "Renewal"],
   },
   {
     code: "H",
@@ -71,6 +71,7 @@ export const sidebarModules = [
   "Procurement",
   "Safety (4S)",
   "IMS",
+  "Environmental",
   "Plant",
   "QS",
   "HR",

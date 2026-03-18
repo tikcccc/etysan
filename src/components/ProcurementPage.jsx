@@ -59,6 +59,7 @@ export default function ProcurementPage() {
         <div className="module-layout">
           <div className="module-main">
             <StorySpotlight
+              eyebrow="Three-way match"
               title="PR to delivery verification"
               description="Route requisitions through approval, delivery note verification, and three-way match handover to QS."
               tags={["Delivery Note", "GRN", "Invoice variance"]}

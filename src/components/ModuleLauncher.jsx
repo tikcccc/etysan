@@ -7,7 +7,7 @@ const moduleViewMap = {
   D: "dms",
   E: "safety",
   F: "ims",
-  G: "ims",
+  G: "environmental",
   H: "qs",
   I: "procurement",
   J: "hr",
