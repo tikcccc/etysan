@@ -5,7 +5,7 @@ const viewMeta = {
     eyebrow: "Home",
     title: "e-Tysan System",
     subtitle:
-      "Central workspace for memos, to-do items, notifications, and shared documents.",
+      "Central workspace for operational workflows, approvals, notifications, and shared records.",
   },
   webmail: {
     eyebrow: "Webmail",

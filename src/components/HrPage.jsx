@@ -9,6 +9,7 @@ import {
   hrInjuries,
 } from "../data/hr.js";
 import { useWorkspace } from "../context/WorkspaceContext.jsx";
+import StorySpotlight from "./StorySpotlight.jsx";
 
 const hrTabs = [
   { id: "dashboard", label: "HR Dashboard" },
@@ -84,6 +85,32 @@ export default function HrPage() {
       {activeTab === "dashboard" ? (
         <div className="module-layout">
           <div className="module-main">
+            <StorySpotlight
+              title="Cross-site worker compliance view"
+              description="Consolidate certificates, training history, and site movement in one worker profile."
+              tags={["Green Card", "Transfer history", "Expiry alerts"]}
+              primaryAction={{
+                label: "Open worker profile",
+                onClick: () => openProfilePage(employeeRecords[2] || employeeRecords[0]),
+              }}
+              secondaryAction={{
+                label: "Upload certificate",
+                onClick: () =>
+                  openCertificatePage({
+                    employee: employeeRecords[2] || employeeRecords[0],
+                  }),
+              }}
+              metrics={[
+                {
+                  label: "Worker",
+                  value: (employeeRecords[2] || employeeRecords[0])?.name || "Chan Tai Man",
+                },
+                {
+                  label: "Status",
+                  value: (employeeRecords[2] || employeeRecords[0])?.greenCard || "Expiring Soon",
+                },
+              ]}
+            />
             <div className="module-kpis">
               {hrKpis.map((kpi) => (
                 <article key={kpi.label} className="kpi-card">

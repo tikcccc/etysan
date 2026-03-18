@@ -26,7 +26,7 @@ export const dmsCategories = [
   { code: "PR-A13", name: "Incident Report", count: 6 },
   { code: "PR-A14", name: "As-Built Record", count: 7 },
   { code: "PR-A15", name: "Conditional Survey / CCTV / TTA", count: 4 },
-  { code: "PR-A16", name: "Compliant Record", count: 5 },
+  { code: "PR-A16", name: "Complaint Record", count: 5 },
   { code: "PR-A17", name: "Handover Record", count: 2 },
 ];
 
@@ -146,6 +146,7 @@ export const dmsExternalAccess = [
 export const dmsFolderCards = [
   {
     name: "Incoming Mail",
+    category: "Incoming Correspondence",
     subtitle: "Correspondence intake",
     count: 12,
     updated: "2h ago",
@@ -153,6 +154,7 @@ export const dmsFolderCards = [
   },
   {
     name: "Daily Reports",
+    category: "Site Daily Report",
     subtitle: "Construction logs",
     count: 14,
     updated: "Today",
@@ -160,6 +162,7 @@ export const dmsFolderCards = [
   },
   {
     name: "Drawings",
+    category: "Approval Letter / Drawing / Consent",
     subtitle: "Design revisions",
     count: 9,
     updated: "Yesterday",
@@ -167,6 +170,7 @@ export const dmsFolderCards = [
   },
   {
     name: "Site Photos",
+    category: "Inspection Form / Photos",
     subtitle: "Inspection evidence",
     count: 10,
     updated: "Jan 28",
@@ -174,6 +178,7 @@ export const dmsFolderCards = [
   },
   {
     name: "Tender",
+    category: "Tender Docs",
     subtitle: "Clarifications",
     count: 6,
     updated: "Jan 26",

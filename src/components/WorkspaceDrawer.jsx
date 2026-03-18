@@ -1024,23 +1024,50 @@ function DmsReviewWorkspace({
   );
 }
 
-function DmsUploadWorkspace({ closeWorkspace, payload }) {
+function DmsUploadWorkspace({ closeWorkspace, openPageWorkspace, payload, surface }) {
   const [form, setForm] = useState({
     title: "Safety inspection evidence pack",
     category: dmsCategories[9]?.name || "Inspection Form / Photos",
     phase: "Construction",
     owner: "S. Ahmed",
-    library: payload.library || "Project DMS",
+    library: payload?.library || "Project DMS",
     version: "Rev A",
     access: "Internal review",
     watermark: "Enabled",
   });
   const [submitted, setSubmitted] = useState(false);
+  const submittedRecord = {
+    id: "DMS-2488",
+    title: form.title,
+    category: form.category,
+    phase: form.phase,
+    owner: form.owner,
+    updated: "Jan 29",
+    status: "Review",
+    type: "PDF",
+    size: "4.2 MB",
+    ocr: true,
+    encrypted: true,
+    externalAccess:
+      form.access === "Internal review" ? "None" : `${form.access} (expires Feb 10)`,
+    library: form.library.replace(" DMS", ""),
+  };
 
   const footer = submitted ? (
-    <button className="primary-button" type="button" onClick={closeWorkspace}>
-      Close panel
-    </button>
+    <>
+      <button
+        className="secondary-button"
+        type="button"
+        onClick={() =>
+          openPageWorkspace("dmsReview", { record: submittedRecord }, "dms")
+        }
+      >
+        Open review workspace
+      </button>
+      <button className="ghost-button" type="button" onClick={closeWorkspace}>
+        {closeActionLabel(surface)}
+      </button>
+    </>
   ) : (
     <button
       className="primary-button"
@@ -1186,7 +1213,7 @@ function DmsUploadWorkspace({ closeWorkspace, payload }) {
           {submitted ? (
             <DrawerSection title="Result">
               <div className="workspace-note success">
-                <p>Record filed as DMS-2488 and routed for controlled review.</p>
+                <p>Record DMS-2488 has been indexed and routed for controlled review.</p>
               </div>
             </DrawerSection>
           ) : null}
@@ -1493,6 +1520,13 @@ function SafetyInspectionWorkspace({ closeWorkspace, payload, surface }) {
               </div>
             </div>
           </DrawerSection>
+          {form.severity === "Immediate work stoppage" ? (
+            <DrawerSection title="Escalation">
+              <div className="workspace-note">
+                <p>Project Manager push notification triggered. Escalation remains active until the issue is acknowledged.</p>
+              </div>
+            </DrawerSection>
+          ) : null}
           <DrawerSection title="Audit trail">
             <Timeline items={timeline} />
           </DrawerSection>
@@ -1823,6 +1857,167 @@ function SafetyAttendanceWorkspace({ closeWorkspace, surface }) {
                 { label: "Sync target", value: "HR + Safety records" },
               ]}
             />
+          </DrawerSection>
+        </div>
+      </div>
+    </WorkspaceShell>
+  );
+}
+
+function SafetyWorkerProfileWorkspace({
+  closeWorkspace,
+  openPageWorkspace,
+  payload,
+  surface,
+}) {
+  const worker = payload.record || workers[0];
+  const employee = enrichHrEmployee(findHrEmployeeByName(worker.name) || { employee: worker.name });
+  const trainingRecords = hrTraining.filter((record) => record.employee === employee.name);
+  const accessResult =
+    worker.accessStatus === "Denied"
+      ? "Blocked"
+      : worker.safetyScore < 70
+        ? "Flagged"
+        : "Allowed";
+  const timeline = [
+    {
+      title: "Site B officer scanned worker ID",
+      meta: timelineStamp(`${worker.id} · No re-registration required`),
+    },
+    {
+      title: "Training and accident history loaded from Site A",
+      meta: timelineStamp("Modulus E + Modulus J synced into centralized worker profile"),
+    },
+    {
+      title: "Certificate validity checked against gate rules",
+      meta: timelineStamp(`${accessResult} result shown before site entry`),
+    },
+  ];
+
+  return (
+    <WorkspaceShell
+      moduleLabel="Safety"
+      title="Cross-site worker profile"
+      subtitle={`${worker.name} · Site transfer and gate decision`}
+      badge={accessResult}
+      badgeTone={statusClass(accessResult)}
+      footer={
+        <>
+          <button
+            className="secondary-button"
+            type="button"
+            onClick={() => openPageWorkspace("hrProfile", { record: employee }, "hr")}
+          >
+            Open linked HR profile
+          </button>
+          <button className="ghost-button" type="button" onClick={closeWorkspace}>
+            {closeActionLabel(surface)}
+          </button>
+        </>
+      }
+    >
+      <div className="workspace-content-grid">
+        <div className="workspace-stack">
+          <DrawerSection title="Gate lookup">
+            <MobileFrame title="Worker registry" subtitle="Centralized worker database">
+              <div className="workspace-list">
+                <div className="workspace-list-row">
+                  <div>
+                    <strong>Lookup method</strong>
+                    <span>Scan card or search by HKID / worker ID</span>
+                  </div>
+                  <span className={`workspace-badge ${statusClass(accessResult)}`}>
+                    {accessResult}
+                  </span>
+                </div>
+                <div className="workspace-list-row">
+                  <div>
+                    <strong>{worker.name}</strong>
+                    <span>
+                      {worker.id} · {worker.hkid}
+                    </span>
+                  </div>
+                  <span>{worker.trade}</span>
+                </div>
+              </div>
+            </MobileFrame>
+          </DrawerSection>
+
+          <DrawerSection title="Worker summary">
+            <MetaGrid
+              items={[
+                { label: "Worker ID", value: worker.id },
+                { label: "Current site", value: "Site B / Gate 1 induction desk" },
+                { label: "Previous site", value: "Site A / marine works package" },
+                { label: "Accident history", value: "1 record loaded from Site A" },
+                { label: "Safety score", value: `${worker.safetyScore}%` },
+                { label: "Gate result", value: accessResult },
+              ]}
+            />
+          </DrawerSection>
+
+          <DrawerSection title="Certificates and training">
+            <div className="workspace-list">
+              {employee.certificates.map((item) => (
+                <div key={`${employee.id}-${item.title}`} className="workspace-list-row">
+                  <div>
+                    <strong>{item.title}</strong>
+                    <span>Expiry {item.expiry}</span>
+                  </div>
+                  <span className={`workspace-badge ${statusClass(item.status)}`}>
+                    {item.status}
+                  </span>
+                </div>
+              ))}
+              {trainingRecords.map((record) => (
+                <div key={record.id} className="workspace-list-row">
+                  <div>
+                    <strong>{record.course}</strong>
+                    <span>{record.id} · Synced from training record</span>
+                  </div>
+                  <span className={`workspace-badge ${statusClass(record.status)}`}>
+                    {record.status}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </DrawerSection>
+        </div>
+
+        <div className="workspace-stack">
+          <DrawerSection title="Cross-site history">
+            <Timeline
+              items={[
+                ...employee.transfers.map((item) => ({
+                  title: item,
+                  meta: timelineStamp(employee.name),
+                })),
+                ...timeline,
+              ]}
+            />
+          </DrawerSection>
+          <DrawerSection title="Linked modules">
+            <div className="workspace-list">
+              <div className="workspace-list-row">
+                <div>
+                  <strong>Safety records</strong>
+                  <span>Incident history, gate access rules, and toolbox talk attendance</span>
+                </div>
+                <span>Modulus E</span>
+              </div>
+              <div className="workspace-list-row">
+                <div>
+                  <strong>HR profile</strong>
+                  <span>Certificates, payroll identity, and transfer history</span>
+                </div>
+                <span>Modulus J</span>
+              </div>
+            </div>
+          </DrawerSection>
+          <DrawerSection title="Access note">
+            <div className="workspace-note">
+              <p>Worker history is loaded from the centralized worker database, so the safety officer can review Site A records instantly on the first day at Site B.</p>
+            </div>
           </DrawerSection>
         </div>
       </div>
@@ -4090,6 +4285,8 @@ export function ActiveWorkspace(props) {
       return <SafetyIncidentWorkspace {...props} payload={workspace.payload} />;
     case "safetyAttendance":
       return <SafetyAttendanceWorkspace {...props} payload={workspace.payload} />;
+    case "safetyWorkerProfile":
+      return <SafetyWorkerProfileWorkspace {...props} payload={workspace.payload} />;
     case "hrManpowerRequest":
       return <HrManpowerRequestWorkspace {...props} payload={workspace.payload} />;
     case "hrProfile":

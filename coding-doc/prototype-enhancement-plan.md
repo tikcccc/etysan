@@ -1,480 +1,432 @@
-# e-Tysan 原型二级交互增强建议
+# e-Tysan 原型对齐与前端 Demo 增强计划
 
-## 1. 背景与结论
+## 1. 本次结论
 
-当前原型已经完成了一级模块切换，并且部分模块已经有二级 tab、列表、卡片和 KPI 展示；但整体仍然更像“静态页面集合”，还不是“可演示业务流程的交互式原型”。
-
-客户现在能看到：
-
-- 有哪些模块
-- 每个模块大概长什么样
-- 每个模块会展示哪些信息
-
-客户现在还看不到：
-
-- 点按钮之后会进入什么业务流程
-- 表单具体长什么样、要填什么字段
-- 审批链怎么流转、状态怎么变化
-- 一个事件如何跨模块串起来
-
-因此，下一步不应该继续只加页面，而应该把原型升级成“场景驱动的二级交互原型”：
-
-- 从看板进入对象详情
-- 从对象详情进入表单/审批动作
-- 表单提交后能看到状态变化、流程推进、审计轨迹
-
-这样客户才能更直观地理解最终产品的工作方式。
-
-## 2. 现有原型的主要限制
-
-结合当前代码实现，现状可以概括为：
-
-- 顶层入口主要由 [`src/App.jsx`](../src/App.jsx) 的 `activeView` 切换驱动，核心是页面级切换。
-- 模块内虽然已经有一些二级结构，例如 DMS library 切换、QS/Procurement/HR/Plant/IMS 的 tab 和选中行，但大部分按钮仍然没有后续动作。
-- 绝大多数 CTA 只停留在视觉层，例如 `Upload`、`Share`、`Start inspection`、`Report incident`、`New requisition`、`Certify payment`、`Apply leave`、`New job sheet` 等按钮没有再打开详情、表单或流程。
-- 当前没有统一的“详情页 / 抽屉 / 弹窗 / 流程页”，也没有“提交后状态变化”的演示逻辑。
-- 当前没有明显的跨模块联动，例如 Safety 事件不会联动到 DMS、HR、Procurement、QS。
-- 当前没有角色视角切换，不足以体现 PRD 中的 `Requester / Reviewer / Approver / Executive / Admin` 差异。
-
-换句话说，当前原型已经有一级导航和部分二级信息布局，但缺“业务对象详情层”和“业务动作层”。
-
-## 3. 原型升级目标
-
-建议把原型升级到下面这个展示深度：
-
-### 3.1 一级：模块入口
-
-保留当前做法，用于展示信息架构和主模块范围。
-
-### 3.2 二级：对象详情
-
-点击卡片、列表行、通知、审批项、按钮后，进入具体对象详情，例如：
-
-- 某一份文件的审批详情
-- 某一张安全巡检单的内容
-- 某一张采购申请单 / PO 的流转进度
-- 某一张付款证书的审批状态
-- 某个员工/工人的完整档案
-
-### 3.3 三级：动作与结果
-
-严格来说，客户要真正看懂最终产品，通常还需要在“二级详情”基础上再多一步动作反馈，因此建议至少补到“2.5 层”：
-
-- 填写表单
-- 点击提交/审批/退回
-- 页面状态即时变化
-- 时间线、审批链、审计记录同步更新
-
-如果只做详情、不做动作，客户仍然会觉得系统只是“可点击的 PPT”。
-
-## 4. 设计原则
-
-### 4.1 以场景驱动，而不是以页面驱动
-
-不要继续把重点放在“再补几个页面”，而应围绕客户最关心的业务故事来做，例如：
-
-- 安全主任发现问题后如何拍照、定位、派整改
-- 地盘如何发起采购申请并走到 PO、收货、转 QS
-- QS 如何审核付款、出证书、留痕
-- 客诉/NCR 如何触发 CAR 并闭环
-
-### 4.2 表单命名和流程节点必须对齐文件
-
-建议直接采用文档中的真实名称，而不是泛化成通用词。这样客户一眼就能对上业务语义。
-
-关键来源包括：
+本计划已对照以下资料重新收敛：
 
 - [`doc/prd.md`](../doc/prd.md)
 - [`reference-doc/20260216 Email Tender Clarification to isBIM 0227 V1.docx`](../reference-doc/20260216%20Email%20Tender%20Clarification%20to%20isBIM%200227%20V1.docx)
 - [`reference-doc/Appendix A - eTysan System_Modulus Experience_v1.1.docx`](../reference-doc/Appendix%20A%20-%20eTysan%20System_Modulus%20Experience_v1.1.docx)
 - [`reference-doc/Modulus Description for e-Tysan System.pdf`](../reference-doc/Modulus%20Description%20for%20e-Tysan%20System.pdf)
 
-### 4.3 优先展示“闭环”
+结论有 4 点：
 
-客户最容易被打动的不是单独一个表单，而是闭环：
+- 当前目标应该明确为“给客户看的前端 Demo”，不是“先把完整系统和后端打通”。
+- 当前代码已经有可复用的前端流程骨架，包括 [`src/App.jsx`](../src/App.jsx)、[`src/components/WorkspacePage.jsx`](../src/components/WorkspacePage.jsx)、[`src/components/WorkspaceDrawer.jsx`](../src/components/WorkspaceDrawer.jsx)，不需要为了这轮 Demo 再做一轮大重构。
+- 当前文档里的优先级与 reference-doc 还没有完全对齐，尤其是客户明确点名要看的 `跨工地 worker profile`、`100+ 工人 Toolbox Talk attendance`、`Complaint -> CAR` 没有被提升到第一优先级。
+- 下一步最重要的不是“补更多模块页”，而是把客户真正想看的 6 条业务故事做得更清楚、更可点、更像最终产品。
 
-- 发起
-- 审批/处理
-- 回写状态
-- 归档/留痕
+## 2. 与 reference-doc 的对齐检查
 
-### 4.4 原型先追求“可信”，再追求“完整”
+### 2.1 客户明确想看的 Demo 场景
 
-不需要一开始把所有按钮都做成可操作，但优先模块必须至少各自有 1 个能走通的真实场景。
-
-### 4.5 重要表单与复杂功能优先使用独立页面
-
-不要把所有交互都塞进侧栏。对于下面这些场景，建议直接进入新的页面，而不是只用 drawer/sidebar 承载：
-
-- 字段很多的核心表单
-- 有多步骤状态推进的流程
-- 需要同时展示详情、附件、审批链、时间线、审计记录的对象
-- 会发生跨模块跳转或深链的关键业务
-- 用户会停留较久、需要连续完成多个动作的任务
-
-这类场景通常包括：
-
-- Safety 巡检、ad-hoc issue、事故两阶段上报
-- Procurement requisition / quotation analysis / delivery verification
-- QS 付款详情与审批流程
-- IMS complaint / NCR / CAR
-- HR worker profile / leave / certificate
-- Plant job sheet / transfer
-
-侧栏和弹窗仍然保留，但只用于轻量动作，例如：
-
-- 快速预览
-- 短备注或退回原因
-- 权限分享
-- 最终确认或电子签核
-
-换句话说，原型不应该是 `drawer-first`，而应该是：
-
-- 复杂主任务：独立页面
-- 次级补充操作：侧栏
-- 最终确认动作：弹窗
-
-## 5. 最值得优先补强的演示场景
-
-下面这些场景最适合做成可以点击、可以推进状态的原型，且都能直接对齐 reference-doc。
-
-### 5.1 Safety：Ad-hoc Issue 现场问题发现到整改闭环
-
-来源对齐：
-
-- Clarification 文档明确要求演示“安全主任巡查时发现一个不在预定义 checklist 里的问题，如何拍照、定位、指派分判并跟进到完成”。
-
-原型建议：
-
-- `Start inspection` 进入移动端样式的巡检详情页
-- 在巡检页中点击 `Log new issue`
-- 进入 issue 表单页：照片、位置/zone、严重程度、到期日、责任分判、备注
-- 提交后自动进入整改流程时间线：
-  `Created -> Assigned -> Acknowledged -> Rectified -> Verified -> Closed`
-- 整改方上传 before/after 证据
-- 安全主任点击 `Verify` 后关闭事项
-- 同步展示 audit trail 和通知记录
-
-这是最应该优先实现的场景之一，因为它最接近客户口中的“最终产品怎么工作”。
-
-### 5.2 Safety：事故两阶段上报与 RCA
-
-来源对齐：
-
-- PRD 与 Modulus Description 都提到事故两阶段上报。
-- Clarification 中也强调 preliminary -> investigation -> close 的过程。
-
-原型建议：
-
-- `Report incident` 打开第一阶段表单页：基本事件、时间、地点、伤害等级、临时措施
-- 提交后生成事件编号，并显示 `Stage 1 submitted`
-- 在事件详情中解锁第二阶段调查表：
-  根因分析、责任归属、纠正措施、附件、管理层确认
-- 右侧用 stepper 展示：
-  `Preliminary -> Investigation -> RCA -> Closed`
-
-### 5.3 Safety：Toolbox Talk / E-Training Attendance
-
-来源对齐：
-
-- Clarification 明确要求演示 100+ 工人 Toolbox Talk 的 mass attendance。
-- 文档明确提到 RFID/NFC 扫卡、手动 fallback、同步到 HR/Training。
-
-原型建议：
-
-- `Create form` 或单独 `Start toolbox talk` 打开会话创建页
-- 展示 topic、date、site、trainer、attendance method
-- 在移动端样式里展示：
-  `Tap card` / `Manual mode` 两种 check-in
-- 勾选或刷卡后，出勤名单即时累加
-- 完成后显示：
-  `Synced to worker profile / training record`
-
-这个场景能很好体现移动端、现场应用和跨模块联动。
-
-### 5.4 Procurement：Requisition -> Quotation Analysis -> Approval -> PO -> Delivery -> QS Handover
-
-来源对齐：
-
-- PRD 已定义采购主流程。
-- Modulus Description 明确给了采购申请字段和大额采购的 `Quotation Analysis Report (over $100,000)` 审批链。
-
-原型建议：
-
-- `New requisition` 打开采购申请页
-- 字段直接对齐文档：
-  `Job number / request date / item / quantity / delivery date / delivery location / requester / site supervisor sign / project manager sign`
-- 如果金额超过阈值，自动进入 `Quotation Analysis Report` 页面
-- 审批链直接按文件展示：
-  `Head of Cost & Commercial -> Technical Director -> Director -> President -> Vice Chairman`
-- 审批完成后生成 PO
-- `Scan delivery note` 打开收货 / Delivery Note 验证页
-- 最后进入 `QS handover` 状态，并可跳转到 QS 付款流程
-
-这是最适合做“跨模块串联”的演示场景。
-
-### 5.5 QS：Payment Application / Payment Certificate / OCR Review
-
-来源对齐：
-
-- PRD 与 Modulus Description 已明确列出 `Payment Application`、`Payment Certificate`、`Subcontractor’s Payment Certificate/Invoice`。
-- 文档还强调 OCR 与自动归档。
-
-原型建议：
-
-- 在付款列表中点击某张记录进入付款详情
-- 详情页显示：
-  发票扫描图、OCR 摘取结果、金额、工作内容、扣款/调整、审批意见
-- `Certify payment` 触发电子签核弹窗
-- `Request revision` 触发退回并记录 comment
-- 提交后时间线推进：
-  `Request -> OCR extracted -> QS verify -> Director certify`
-- 允许从 QS 详情跳转查看关联 Procurement PO / Delivery Note
-
-### 5.6 DMS：文件上传、审批、共享与外部访问控制
-
-来源对齐：
-
-- Modulus Description 里给出 Project DMS/Safety DMS 的分类与审批要求。
-- DMS 需要体现 OCR、版本控制、外部分享、水印、权限和审计。
-
-原型建议：
-
-- `Upload` 打开上传页：
-  library、phase、category、owner、version、external access、watermark
-- `Open for review` 打开文档详情页，展示：
-  文件预览、版本、审批链、外部分享对象、到期时间
-- `Share` 打开外部共享权限侧栏或轻量表单
-- 文件夹 drill-down 可以对齐文档分类，例如：
-  `PR-A10 Inspection Form / Photos`
-  `PR-A13 Incident Report`
-  `PR-A16 Complaint Record`
-
-### 5.7 IMS：Complaint / NCR / CAR 与 Environmental Inspection
-
-来源对齐：
-
-- Appendix A 与 Modulus Description 都提到：
-  `Client Complaint Record`、`NCR`、`CAR`、`Request for Inspection`、环境巡检与许可证管理。
-
-原型建议：
-
-- `New complaint` 打开客诉页面，提交后自动生成 `CAR`
-- CAR 详情展示调查、根因、整改、电子签署、关闭
-- `Start inspection` 打开环境巡检页面，支持照片、问题数量、整改前后对照
-- Permit 列表中的 `Renewal log` 打开续期申请详情和到期提醒
-
-### 5.8 HR：Worker Profile / Leave / Certificate
-
-来源对齐：
-
-- PRD 提到档案、请假、培训、资格证有效期。
-- Clarification 提到跨工地 worker profile 即时查看历史。
-- Modulus Description 提到 `Green Card`、资格、入离职流程。
-
-原型建议：
-
-- 员工/工人列表点击后进入完整档案
-- 档案中展示：
-  基本资料、Green Card、培训记录、事故记录、当前工地、历史转场
-- `Apply leave` 打开请假申请页
-- `Upload certificate` 打开证书上传和到期提醒页
-- Safety 模块中的 worker 可以深链到 HR 档案
-
-### 5.9 Plant：Job Sheet / Transfer Note / Inspection Record
-
-来源对齐：
-
-- PRD 与 Modulus Description 明确提到：
-  `Job sheet`、`Inspection record`、`Transfer note`、`Plant hire return`、`Material disposal`
-
-原型建议：
-
-- `New job sheet` 打开维修工单页
-- `Create transfer` 打开转场申请页
-- 巡检记录点击后进入 inspection detail
-- 设备详情页展示位置、状态、最近维修、证照、转移历史
-
-## 6. 建议的“按钮到二级原型”映射
-
-| 模块 | 当前入口/按钮 | 建议打开的二级展示 | 说明 |
+| 场景 | reference-doc 明确要求 | 当前计划情况 | 调整结论 |
 | --- | --- | --- | --- |
-| Home | Approval queue / notifications | 统一审批详情页 | 让首页可直接进入对象详情，而不是只做导航 |
-| DMS | `Upload` | 文件上传页 | 重要字段较多，适合用完整页面展示 |
-| DMS | `Share` | 权限设置侧栏/弹窗 | 轻量权限动作可以保留在侧栏 |
-| DMS | `Open for review` | 文档详情页 | 对齐版本、审批链、外部分享 |
-| Safety | `Start inspection` | 巡检详情页 + issue 表单页 | 对齐 checklist、拍照、定位、整改 |
-| Safety | `Report incident` | 两阶段事故页 | 对齐 preliminary + investigation + RCA |
-| Safety | `Create form` | e-form builder / toolbox talk 页 | 对齐 no-code form 和培训签到 |
-| Procurement | `New requisition` | 采购申请页 | 对齐 Job no、送货、签核 |
-| Procurement | `Timeline` / `Track` | PO 流程详情页 | 展示从 requisition 到 QS handover |
-| Procurement | `Scan delivery note` | 收货/送货单确认页 | 强化现场与后端串联 |
-| QS | `Certify payment` | 付款详情页 + 电子签核弹窗 | 详情放在页面，签核确认可保留弹窗 |
-| QS | `Request revision` | 退回原因弹窗/轻量表单 | 体现 workflow 分支 |
-| IMS | `New complaint` | Complaint + CAR 流程页 | 对齐客诉/NCR/CAR |
-| IMS | `Start inspection` | 环境巡检页 | 对齐 monthly environmental inspection |
-| HR | `New hire` / `Add staff` | 员工档案页 | 对齐入职资料和资格 |
-| HR | `Apply leave` | 请假申请页 + 审批状态 | 对齐 leave workflow |
-| HR | `Upload certificate` | 证书上传与到期提醒页 | 对齐 Green Card / training cert |
-| Plant | `New job sheet` | 维修工单页 | 对齐 repair & maintenance |
-| Plant | `Create transfer` / `Transfer request` | 转场申请页与审批 | 对齐 transfer note |
+| Safety：跨工地 worker profile | Clarification 明确要求演示工人从 Site A 转到 Site B 后，无需重新登记即可查看培训、事故、证书有效期 | 只在 HR 场景里提到，但不是第一阶段核心故事 | 提升为第一阶段核心故事 |
+| Safety：Toolbox Talk 100+ attendance | Clarification 明确要求演示 100+ 工人签到、RFID/NFC、Manual Mode、同步到 HR/Training | 文档已写到，但未进入第一阶段优先级 | 提升为第一阶段核心故事 |
+| Safety：Ad-hoc issue logging | Clarification 明确要求移动端拍照、site plan/GPS/zone、指派分判、跟进至关闭 | 当前计划基本对齐 | 保持第一阶段核心故事 |
+| IMS：Complaint -> CAR -> Closure | Clarification 明确要求从 complaint registration 到 RCA/CAPA、closure notification 的闭环 | 当前计划有写，但优先级不够高 | 提升为第一阶段核心故事 |
+| Environmental：Permit / CNP lifecycle | Clarification 明确要求 permit 申请、附件、审批、validity/renewal tracking | 当前计划只有环境巡检和 renewal log，permit 主流程不够完整 | 补成支持型故事 |
+| Procurement：PR -> PO -> delivery verification -> three-way match | Clarification 明确要求 PR to PO、site delivery verification、PO/GRN/Invoice 三方匹配 | 当前计划写到了 requisition、approval、PO、delivery，但三方匹配不够明确 | 在采购主故事里补强 GRN / invoice variance 展示 |
+| QS：Payment certification / OCR review | PRD 与参考材料明确强调 Payment Application、Payment Certificate、OCR、Delivery Note 关联 | 当前计划基本对齐 | 保持第一阶段核心故事 |
+| HR：Certificate repository / expiry reminder / site access flag | Clarification 明确要求证书扫描件、到期提醒、过期阻挡或标记入场 | 当前计划有 certificate，但没有明确写成和 Safety access 联动的重点 | 作为 worker profile 的支持故事补强 |
+| DMS：Upload / review / share / watermark | PRD 与模块说明强调 OCR、版本、水印、外部分享、审批 | 当前计划对齐，但这不是客户澄清里最核心的 interview story | 保留，但降为支持型展示 |
+| Plant：Job sheet / transfer | PRD 有要求，但不属于这轮 reference-doc 最明确的客户点名场景 | 当前计划权重偏高 | 移到 Demo 后续阶段 |
+| Safety：incident two-stage report | PRD 提到，两阶段事故上报也有业务价值 | 当前计划放在很前 | 不删除，但降到第一轮 Demo 之后 |
 
-## 7. 为了让客户“看见最终产品”，原型里必须补的展示元素
+### 2.2 需要修正的判断
 
-建议每个重点场景至少具备以下 6 类元素：
+当前文档里有几处判断已经落后于代码现状，需要修正：
 
-1. 业务对象详情
-   例如单据头、状态、编号、项目、责任人、附件。
-2. 表单本体
-   要能看到字段，而不是只有按钮。
-3. 流程 stepper
-   让客户知道现在在哪一环、下一步是什么。
-4. 操作按钮
-   至少要有提交、审批、退回、关闭、上传证据等动作。
-5. 时间线 / 审计轨迹
-   展示谁在什么时候做了什么。
-6. 状态回写
-   动作完成后，列表卡片和详情状态要同步变化。
+- 现在不能再说“大部分按钮都没有后续动作”。当前代码里已经有 `Safety ad-hoc issue`、`Toolbox talk attendance`、`Procurement requisition / delivery verification`、`QS payment`、`IMS complaint / CAR`、`HR profile / leave / certificate`、`DMS upload / share` 等前端流程。
+- 现在也不能再说“没有统一的详情页 / 流程页框架”。[`src/components/WorkspacePage.jsx`](../src/components/WorkspacePage.jsx) 和 [`src/components/WorkspaceDrawer.jsx`](../src/components/WorkspaceDrawer.jsx) 已经是可复用的展示外壳。
+- 这一轮不应该把重点放在新增路由体系、重做组件分层、甚至预先铺后端接口，而应该直接在现有前端状态流上完成客户指定故事。
 
-如果这 6 类元素没有出现，客户仍然很难把原型理解成“接近最终系统”的产品。
+换句话说，当前原型的问题已经不再是“完全没有流程”，而是：
 
-## 8. 基于现有 React 原型的实现方式
+- 场景优先级还不够贴近客户澄清文件
+- 首页到重点故事的路径还不够清晰
+- 同一类页面的视觉层次和信息结构还不够统一
+- 有些 supporting story 还没有被明确降级，导致 scope 容易过大
 
-建议不要推翻现有结构，而是在当前代码基础上补一层统一的页面级交互框架。
+## 3. 这轮 Demo 的范围定义
 
-### 8.1 保留现有模块页，新增统一的页面级交互框架
+### 3.1 明确目标
 
-建议新增可复用组件：
+这轮只做“前端可演示原型”，目标是让客户在演示时清楚看到：
 
-- `RecordPageLayout`
-- `WorkflowPage`
-- `FormPage`
-- `QuickActionDrawer`
-- `QuickActionModal`
-- `AuditTimeline`
-- `RecordHeader`
-- `MobilePreviewFrame`（给 Safety 场景）
-
-同时建议统一页面路由模式，例如：
-
-- `/:module/:recordId`
-- `/:module/new`
-- `/:module/:recordId/workflow`
-
-这样每个模块不需要单独发明一套交互模式，也能避免复杂流程都挤进侧栏。
-
-### 8.2 用数据驱动场景，而不是把逻辑写死在按钮里
-
-建议新增一组场景数据，例如：
-
-- `src/data/scenarios/safety.js`
-- `src/data/scenarios/procurement.js`
-- `src/data/scenarios/qs.js`
-
-每个场景定义：
-
-- 标题
-- 对应模块
-- 表单字段
-- 当前状态
-- 可执行动作
-- 审批链
-- 时间线
-- 关联记录
-
-这样既方便快速搭原型，也方便以后继续扩展。
-
-### 8.3 给按钮接入统一事件
-
-当前多数按钮缺动作。建议统一接到：
-
-- 切换到详情页
-- 切换到表单页
-- 切换到流程页
-- 打开轻量抽屉
-- 打开确认弹窗
-- 执行一次模拟状态变更
-
-优先级建议明确为“先 page，后 drawer/modal”。先做“前端状态驱动的高可信原型”，不需要一开始就接真实后端。
-
-### 8.4 增加角色切换
-
-建议在顶栏加入角色切换：
-
-- Requester
-- Reviewer
-- Approver
-- Admin
-
-同一个流程在不同角色下展示不同按钮，客户会更容易理解 RBAC 和审批链逻辑。
-
-### 8.5 增加跨模块深链
-
-最值得补的跨模块联动包括：
-
-- Safety incident -> DMS incident document
-- Safety worker -> HR worker profile
-- Procurement PO -> QS payment record
-- IMS complaint -> DMS evidence folder
-
-客户往往会通过这些“串起来的地方”判断系统是否真的像一个平台，而不是多个孤立页面。
-
-## 9. 建议的实现优先级
-
-### 第一阶段：先把 5 个核心故事做通
-
-建议优先做：
-
-- Safety ad-hoc issue
-- Safety incident report
-- Procurement requisition to PO
-- QS payment approval
-- DMS upload/review/share
-
-做到这一步，客户已经能明显感知产品不是静态页面。
-
-### 第二阶段：补跨模块联动和角色视角
-
-建议补：
-
-- Worker profile 跨 Safety / HR
-- Delivery note 跨 Procurement / QS
-- Complaint / CAR 跨 IMS / DMS
-- 角色切换
-- 审批时间线
-
-### 第三阶段：补高保真演示细节
-
-建议补：
-
-- 移动端框架展示
-- 电子签核弹窗
-- OCR 识别结果对照
-- 推送/通知/升级提醒
-- Demo mode / guided tour
-
-## 10. 建议的原型验收标准
-
-如果目标是“让客户更清楚最终产品长什么样”，建议把原型增强验收标准定成下面这样：
-
-- 每个优先模块至少有 1 个可以完整点击走通的业务场景
-- 每个重点按钮点击后都能进入详情、表单或流程，而不是无响应
-- 每个重点场景都能看到表单字段、审批链、状态变化、审计轨迹
-- 至少有 3 条跨模块联动路径
-- 至少有 1 个移动端现场场景
-- 所有场景名称、节点名称、表单名称尽量对齐 reference-doc
-
-## 11. 总结
-
-当前原型的问题不是“页面不够多”，而是“缺少可进入下一层的业务行为”。  
-下一步最有效的方向，是把现有模块页升级为“可点击进入详情、可填写表单、可推进状态、可看到流程闭环”的二级交互原型。
-
-如果按上面的方式补强，客户将不再只是看到模块目录，而是能真实感受到：
-
-- 一条业务是怎么发起的
-- 谁来审批
 - 表单长什么样
+- 业务如何推进
 - 状态如何变化
-- 资料最后如何归档和追踪
+- 谁在什么环节处理
+- 相关资料如何联动到其他模块
 
-这会比继续单纯补页面，更接近“最终产品体验”的演示效果。
+### 3.2 明确不做
+
+这轮不做真实后端能力，不把时间花在下面这些地方：
+
+- 不接真实 API
+- 不接真实数据库
+- 不做真实登录、SSO、RBAC 配置后台
+- 不做真实 OCR 引擎
+- 不接真实 RFID/NFC 读卡器
+- 不做真实短信、推送、邮件通知
+- 不做真实文件上传、外链、权限加密
+
+以上内容只以“前端模拟结果”呈现，例如：
+
+- `OCR extracted`
+- `NFC tap simulated`
+- `Synced to HR + Safety`
+- `Push notification sent`
+- `Access blocked`
+
+### 3.3 演示原则
+
+- 所有故事都用固定假资料与前端状态驱动。
+- 每一步操作都能即时回写状态、时间线、摘要卡片。
+- 每条故事都能重置到初始状态，方便 demo 反复演示。
+- 技术能力只做“可信展示”，不做真实集成实现。
+
+## 4. 客户 Demo 主线
+
+建议把第一轮客户 Demo 收敛成 6 条主故事，其他模块作为 supporting surface 出现，不再平均铺开。
+
+### 4.1 Safety：跨工地 worker profile
+
+来源对齐：
+
+- Clarification 明确要求演示工人从 Site A 转到 Site B 后，安全主任如何即时查看完整历史。
+
+原型必须显示：
+
+- `Scan card / Search ID` 入口
+- 工人主档：姓名、工种、当前工地、唯一 ID
+- Site A 的事故记录、培训记录、证书有效期
+- Site transfer history
+- 当前 access result：`Allowed / Flagged / Blocked`
+- 深链到 HR profile
+
+演示重点：
+
+- 强调 `No re-registration`
+- 强调 `Safety + HR` 的跨模块联动
+- 强调证书与入场控制的关系
+
+### 4.2 Safety：Toolbox Talk / E-Training Attendance
+
+来源对齐：
+
+- Clarification 明确要求演示 100+ 工人签到、RFID/NFC、Manual Mode、同步到 training record。
+
+原型必须显示：
+
+- Session setup：topic、date、site、trainer、attendance mode
+- `Tap card` 与 `Manual mode` 两种签到方式
+- 实时 attendance count
+- 漏带卡时的 fallback 搜索
+- 完成后 `Synced to worker profile / training record`
+
+演示重点：
+
+- 这是最典型的 mobile-first 现场场景
+- 必须突出“快”和“清楚”，不要堆太多后台概念
+
+### 4.3 Safety：Ad-hoc Issue 现场问题闭环
+
+来源对齐：
+
+- Clarification 明确要求安全主任巡查时新发现问题，移动端拍照、定位、指派分判、跟进直至关闭。
+
+原型必须显示：
+
+- 移动端巡检界面
+- 新 issue 表单：photo、site plan / GPS / zone、severity、due date、subcontractor、remark
+- 状态推进：`Log -> Assign -> Rectify -> Verify -> Close`
+- before / after evidence
+- audit trail
+
+建议补强：
+
+- 当 severity 为 `Immediate work stoppage` 时，显示 `PM notified` / `Escalation pending` 的前端提示
+
+### 4.4 Procurement：PR -> PO -> Delivery -> Three-way Match
+
+来源对齐：
+
+- Clarification 明确要求演示 PR to PO、site delivery verification、PO/GRN/Invoice 三方匹配。
+
+原型必须显示：
+
+- Requisition 表单字段：
+  `Job number / request date / item / quantity / delivery date / delivery location / requester`
+- 按金额触发 approval route
+- 审批后自动生成 PO
+- Site delivery note / GRN 验证
+- Invoice 上传后进行 three-way match
+- 若有差异，显示 variance panel
+- 流程终点为 `QS handover`
+
+需要特别修正：
+
+- 当前计划里 `Quotation Analysis` 写得比较重，但客户演示真正必须看到的是 `delivery verification + three-way match`
+- 因此采购故事应从“长审批链展示”调整成“从地盘发起到收货、对账、交 QS 的闭环”
+
+### 4.5 IMS：Client Complaint -> CAR -> Closure
+
+来源对齐：
+
+- Clarification 明确要求从 complaint registration 到 investigator、RCA/CAPA、closure notification 的全过程。
+
+原型必须显示：
+
+- Complaint record
+- Investigator / case owner
+- Root cause
+- Corrective / preventive action
+- CAR 自动生成
+- E-sign close
+- Monthly summary / trend hook
+
+演示重点：
+
+- 这是质量模块最容易被客户快速理解的闭环故事
+- 页面命名必须直接用 `Complaint`、`CAR`、`Closure`
+
+### 4.6 QS：Payment Certificate / OCR Review
+
+来源对齐：
+
+- PRD 与参考材料都强调 payment certificate、OCR、delivery note 关联、审批链与审计留痕。
+
+原型必须显示：
+
+- 付款详情页
+- OCR extraction panel
+- 金额、工作内容、retention / adjustment
+- 关联 Procurement PO / Delivery Note
+- `Request revision` 与 `Certify payment`
+- 审批 stepper 与 audit trail
+
+演示重点：
+
+- 这一页应该看起来像“接近最终系统的商业审批界面”
+- `OCR` 是展示点，但只做前端模拟结果，不需要真实识别
+
+### 4.7 支持型展示，不作为第一轮主故事
+
+下面这些保留，但不再占用第一轮主路径：
+
+- DMS：`Upload / review / share / watermark`
+- HR：`Certificate upload / expiry reminder / access flag`
+- Environmental：`Permit / renewal tracking`
+- Safety：`incident two-stage report`
+- Plant：`job sheet / transfer`
+
+这些内容建议作为：
+
+- 主故事里的 linked record
+- 侧边 supporting drawer
+- 演示 Q&A 时的补充页面
+
+## 5. 界面需要如何更清晰
+
+这轮 Demo 的界面目标不是更花，而是更容易让客户一眼看懂。
+
+### 5.1 一屏只讲一件事
+
+- 模块首页负责“入口与摘要”
+- 故事页负责“单条业务闭环”
+- 不要在同一页同时讲 3 个流程
+
+### 5.2 固定页面骨架
+
+所有主故事页面尽量统一为：
+
+- 顶部：标题、编号、状态、主 CTA
+- 左侧：详情 / 表单 / 证据
+- 右侧：stepper / 审批链 / 时间线 / linked records
+
+### 5.3 主按钮只能有一个重点
+
+每个故事页上方只保留一个最强的主动作，例如：
+
+- `Submit requisition`
+- `Sync attendance`
+- `Assign issue`
+- `Issue CAR`
+- `Certify payment`
+
+其他动作放到次级按钮，避免客户找不到下一步。
+
+### 5.4 状态必须放在首屏
+
+客户最关心的是流程推进，因此以下元素必须在首屏可见：
+
+- 当前状态 badge
+- stepper
+- 下一步动作
+- 关键摘要字段
+
+### 5.5 术语直接对齐文件
+
+不要在界面里混用泛化命名。优先使用 reference-doc 与 PRD 中出现的真实业务词，例如：
+
+- `Toolbox Talk`
+- `Client Complaint Record`
+- `CAR`
+- `Payment Certificate`
+- `Delivery Note`
+- `Quotation Analysis`
+- `Green Card`
+
+### 5.6 KPI 和卡片要减量
+
+- 模块页上的 KPI 卡片控制在 3 到 4 个最有解释力的指标
+- 减少“装饰性摘要卡”
+- 把点击路径让出来给主故事入口
+
+### 5.7 移动端展示只留给现场场景
+
+移动端框架只在下面几类场景使用：
+
+- Safety patrol / ad-hoc issue
+- Toolbox Talk attendance
+- 必要时的 mobile approval
+
+其他模块优先用桌面页面展示，避免视觉语言过杂。
+
+### 5.8 技术能力展示要克制
+
+像 `OCR`、`NFC`、`API sync`、`push sent` 这些能力应作为辅助标签出现，而不是页面主角。  
+客户在 Demo 里首先要看懂业务，不是先看技术术语。
+
+## 6. 基于现有 React 原型的落地方式
+
+### 6.1 不做大重构，直接复用现有框架
+
+现有前端已经具备以下能力：
+
+- [`src/App.jsx`](../src/App.jsx) 负责 `activeView`、`workspace`、`pageWorkspace`
+- [`src/components/WorkspacePage.jsx`](../src/components/WorkspacePage.jsx) 已支持全页流程展示
+- [`src/components/WorkspaceDrawer.jsx`](../src/components/WorkspaceDrawer.jsx) 已覆盖多条业务故事
+
+因此这轮不建议先做：
+
+- 新路由体系
+- 新状态管理框架
+- 大规模组件目录重组
+- 先行后端接口抽象
+
+### 6.2 页面与抽屉的使用边界
+
+建议直接沿用当前模式：
+
+- 长流程、字段多、要给客户重点看的故事：`pageWorkspace`
+- 轻量确认、辅助信息、supporting record：`workspace drawer`
+
+这比先引入新的 `router-first` 架构更适合当前 Demo 节奏。
+
+### 6.3 数据仍然以场景假资料驱动
+
+建议继续使用 `src/data/*` 里的模块假数据，并只在需要时补少量场景预设：
+
+- `scenarioId`
+- 默认字段
+- 初始状态
+- 可执行动作
+- linked record
+- demo 完成后的状态回写
+
+目标是“快速做出可信故事”，不是“先搭一套抽象平台”。
+
+### 6.4 建议新增的只是轻量通用件
+
+如果要补组件，只补高复用且直接提升清晰度的部分，例如：
+
+- `DemoPathCard`
+- `StoryStatusHeader`
+- `LinkedRecordList`
+- `WorkflowStepper`
+- `AuditTimeline`
+
+不要为了这轮 Demo 先发明太多中间层。
+
+## 7. 修订后的实现优先级
+
+### 第一阶段：客户 Demo 必须完成
+
+- Safety worker cross-site profile
+- Safety toolbox talk attendance
+- Safety ad-hoc issue
+- Procurement PR -> PO -> delivery -> three-way match
+- IMS complaint -> CAR
+- QS payment certificate
+
+### 第一阶段补充：支持型页面
+
+- HR certificate upload / expiry reminder / site access flag（已通过 worker profile + linked HR profile 部分接入）
+- DMS upload / review / share / watermark（下一轮优先补）
+- Environmental permit / renewal tracking（排在 DMS 之后）
+
+### 第二阶段：Demo 之后再补
+
+- Safety incident two-stage report（降级后的补充故事，排在 DMS / Environmental permit 之后）
+- Role switch / RBAC 视角
+- Plant job sheet / transfer
+- Email / SSO / API 等技术型演示包装
+
+## 8. 这轮 Demo 的验收标准
+
+- 6 条主故事都能从首页或模块首页在 2 次点击内进入
+- 演示主路径上没有 dead CTA
+- 每条主故事都能看到：
+  - 业务对象标题与状态
+  - 表单或关键字段
+  - stepper / workflow
+  - 主动作按钮
+  - 时间线 / 审计记录
+  - 至少 1 个 linked record
+- 所有业务名词与 reference-doc / PRD 保持一致
+- 不依赖后端也能完成完整演示
+- 至少有 3 条跨模块联动路径
+- 现场类场景采用移动端视觉，其余模块保持桌面页面清晰展示
+
+## 9. 当前执行进展
+
+### 9.1 本轮已完成
+
+- 首页已新增 6 条客户 demo 直达入口，由 [`src/components/DemoPathways.jsx`](../src/components/DemoPathways.jsx) 驱动，并在 [`src/App.jsx`](../src/App.jsx) 接入。
+- 6 条入口可直达 `跨工地 worker profile`、`Toolbox Talk`、`Ad-hoc issue`、`PR -> three-way match`、`Complaint -> CAR`、`Payment certificate`。
+- Safety 已新增真正属于主故事的 [`safetyWorkerProfile`](../src/components/WorkspaceDrawer.jsx) 页面，并在 [`src/components/SafetyPage.jsx`](../src/components/SafetyPage.jsx) 的主 CTA 与 worker registry 上改成直达该故事。
+- `Immediate work stoppage` 已补 `PM notified` / `Escalation pending` 级别的前端提示。
+- [`src/components/StorySpotlight.jsx`](../src/components/StorySpotlight.jsx) 已接入 [`src/components/ProcurementPage.jsx`](../src/components/ProcurementPage.jsx)、[`src/components/QsPage.jsx`](../src/components/QsPage.jsx)、[`src/components/ImsPage.jsx`](../src/components/ImsPage.jsx)、[`src/components/HrPage.jsx`](../src/components/HrPage.jsx)，把客户要看的主路径提升到模块首页首屏。
+- 首页文案已在 [`src/components/Topbar.jsx`](../src/components/Topbar.jsx) 收敛成 demo 导向，相关样式已集中到 [`src/styles.css`](../src/styles.css)。
+- 验证已完成：`npm run build` 通过。
+
+### 9.2 这一步实际完成了什么
+
+- 完成“主故事入口”：首页和模块首页都能更直接进入客户要看的主路径。
+- 完成“首屏层次”：模块首页先讲 spotlight，再展开 supporting content，避免客户先看到次要 KPI 和列表。
+- HR 已从独立大故事降为 Safety worker profile 的 supporting module，并通过 linked HR profile 承接证书、培训与转场信息。
+
+### 9.3 下一步收口顺序
+
+- DMS：补强 `upload / review / share / watermark`，作为主故事里的 supporting record。
+- Environmental：补 `permit / CNP lifecycle`，让环保模块也有清晰的 permit 主路径。
+- Safety incident：保留为降级后的补充故事，放在上述两项之后。
+
+## 10. 总结
+
+这轮最正确的方向，不是继续把所有模块平均铺开，也不是提前进入后端建设，而是把客户在 reference-doc 中明确要求的故事做成一套“前端可走通、界面够清楚、术语完全对齐、状态能即时变化”的 Demo。
+
+如果按这份计划执行，客户在演示时看到的将不再是“很多页面”，而是：
+
+- 一个工人如何跨工地被识别和追踪
+- 一场 Toolbox Talk 如何快速签到并同步记录
+- 一个现场问题如何被拍照、指派、整改、关闭
+- 一张采购申请如何走到收货与对账
+- 一个客诉如何触发 CAR 并闭环
+- 一张付款证书如何被审核、退回或签核
+
+这会比继续补通用页面，更接近客户真正想看到的产品 Demo。

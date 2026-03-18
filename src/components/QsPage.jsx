@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { qsKpis, qsPayments, qsAlerts, qsContracts, qsReviews } from "../data/qs.js";
+import { procurementOrders } from "../data/procurement.js";
 import { useWorkspace } from "../context/WorkspaceContext.jsx";
+import StorySpotlight from "./StorySpotlight.jsx";
 
 const qsTabs = [
   { id: "overview", label: "Overview" },
@@ -60,6 +62,31 @@ export default function QsPage() {
       {activeTab === "overview" ? (
         <div className="module-layout">
           <div className="module-main">
+            <StorySpotlight
+              title="Payment certificate review"
+              description="Review OCR extraction, commercial comments, linked procurement records, and final certification in one certificate workspace."
+              tags={["OCR extracted", "Linked PO", "Director certify"]}
+              primaryAction={{
+                label: "Open payment story",
+                onClick: () =>
+                  openPageWorkspace(
+                    "qsPayment",
+                    {
+                      linkedOrder: procurementOrders[0],
+                      record: payment,
+                    },
+                    "qs"
+                  ),
+              }}
+              secondaryAction={{
+                label: "Review queue",
+                onClick: () => openPaymentPage(payment),
+              }}
+              metrics={[
+                { label: "Certificate", value: payment?.id || "PAY-SUB-082" },
+                { label: "Stage", value: payment?.status || "Certifying" },
+              ]}
+            />
             <div className="module-kpis">
               {qsKpis.map((kpi) => (
                 <article key={kpi.label} className="kpi-card">

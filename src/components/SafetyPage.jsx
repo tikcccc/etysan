@@ -139,6 +139,8 @@ export default function SafetyPage() {
 
   const openAttendancePage = () =>
     openPageWorkspace("safetyAttendance", {}, "safety");
+  const openWorkerProfilePage = (record = workers[0]) =>
+    openPageWorkspace("safetyWorkerProfile", { record }, "safety");
 
   const openDataBoard = (title, subtitle, items, badge, badgeTone = "info") =>
     openWorkspace("infoBoard", {
@@ -194,16 +196,16 @@ export default function SafetyPage() {
             <button
               className="secondary-button"
               type="button"
-              onClick={() => openIncidentPage(incidentRecords[0])}
+              onClick={() => openWorkerProfilePage(workers[0])}
             >
-              Report incident
+              Open worker profile
             </button>
             <button
               className="ghost-button"
               type="button"
               onClick={openAttendancePage}
             >
-              Create form
+              Toolbox talk
             </button>
           </div>
         </div>
@@ -331,14 +333,14 @@ export default function SafetyPage() {
                     type="button"
                     onClick={openAttendancePage}
                   >
-                    Create template
+                    Start toolbox talk
                   </button>
                   <button
                     className="ghost-button"
                     type="button"
                     onClick={openAttendancePage}
                   >
-                    Template library
+                    Manual fallback
                   </button>
                 </div>
               </div>
@@ -376,20 +378,25 @@ export default function SafetyPage() {
                   <p className="panel-label">Worker registry & access</p>
                   <h3>Register once, work anywhere</h3>
                   <p className="panel-sub">
-                    OCR verified IDs with real-time gate enforcement.
+                    Cross-site transfer history, certificate validity, and gate result in one story.
                   </p>
                 </div>
                 <button
                   className="ghost-button"
                   type="button"
-                  onClick={openAttendancePage}
+                  onClick={() => openWorkerProfilePage(workers[0])}
                 >
-                  OCR scan ID
+                  Open transfer profile
                 </button>
               </div>
               <div className="registry-snapshot">
                 {workers.slice(0, 3).map((worker) => (
-                  <div key={worker.id} className="registry-item">
+                  <button
+                    key={worker.id}
+                    className="registry-item registry-item-button"
+                    type="button"
+                    onClick={() => openWorkerProfilePage(worker)}
+                  >
                     <span className="mono">{worker.id}</span>
                     <div>
                       <p className="registry-name">{worker.name}</p>
@@ -410,43 +417,23 @@ export default function SafetyPage() {
                         Score {worker.safetyScore}%
                       </span>
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
               <div className="registry-actions">
                 <button
                   className="ghost-button"
                   type="button"
-                  onClick={() =>
-                    openWorkspace("infoBoard", {
-                      badge: `${workers.length} workers`,
-                      moduleLabel: "Safety",
-                      sections: [
-                        {
-                          title: "Worker registry",
-                          items: workers.map((worker) => ({
-                            title: `${worker.id} · ${worker.name}`,
-                            detail: `${worker.trade} · ${worker.location}`,
-                            meta: `${worker.greenCard} · Score ${worker.safetyScore}%`,
-                            badge: worker.accessStatus,
-                            badgeTone:
-                              worker.accessStatus === "Granted" ? "approved" : "urgent",
-                          })),
-                        },
-                      ],
-                      subtitle: "Centralized worker identity, card validity, and access control.",
-                      title: "Worker registry",
-                    })
-                  }
+                  onClick={() => openWorkerProfilePage(workers[0])}
                 >
-                  View full registry
+                  View transfer story
                 </button>
                 <button
                   className="secondary-button"
                   type="button"
                   onClick={openAttendancePage}
                 >
-                  New worker
+                  Open toolbox talk
                 </button>
               </div>
             </section>

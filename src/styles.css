@@ -901,6 +901,60 @@ button {
   gap: 1.4rem;
 }
 
+.story-spotlight {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(220px, 0.9fr);
+  gap: 1rem;
+  border-radius: var(--radius-lg);
+  padding: 1.25rem 1.35rem;
+  border: 1px solid rgba(31, 42, 58, 0.08);
+  background:
+    linear-gradient(135deg, rgba(31, 111, 235, 0.08), rgba(255, 255, 255, 0.98) 55%),
+    #ffffff;
+  box-shadow: var(--shadow);
+}
+
+.story-spotlight-main {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.story-spotlight-description {
+  max-width: 62ch;
+}
+
+.story-spotlight-tags,
+.story-spotlight-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.story-spotlight-metrics {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.story-spotlight-metric {
+  border-radius: 14px;
+  padding: 0.85rem 0.9rem;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(31, 42, 58, 0.08);
+  display: grid;
+  gap: 0.25rem;
+}
+
+.story-spotlight-metric span {
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 0.62rem;
+  color: var(--muted);
+}
+
+.story-spotlight-metric strong {
+  color: var(--ink);
+}
+
 .module-kpis {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -1824,6 +1878,16 @@ button {
   padding-bottom: 0.6rem;
 }
 
+.registry-item-button {
+  text-align: left;
+  background: transparent;
+  width: 100%;
+}
+
+.registry-item-button:hover {
+  transform: translateY(-1px);
+}
+
 .registry-name {
   font-weight: 600;
   color: var(--ink);
@@ -2350,6 +2414,11 @@ button {
   box-shadow: var(--shadow);
 }
 
+.folder-card.active {
+  border-color: rgba(31, 111, 235, 0.35);
+  box-shadow: 0 14px 28px rgba(31, 42, 58, 0.12);
+}
+
 .folder-card-head {
   display: flex;
   justify-content: space-between;
@@ -2412,6 +2481,12 @@ button {
   gap: 0.6rem;
 }
 
+.dms-document-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 0.9rem;
+}
+
 .dms-file-head,
 .dms-file-row {
   display: grid;
@@ -2447,6 +2522,62 @@ button {
 .dms-file-row.active {
   background: rgba(31, 111, 235, 0.12);
   border-color: rgba(31, 111, 235, 0.35);
+}
+
+.dms-document-card {
+  background: white;
+  border-radius: 16px;
+  padding: 0.95rem;
+  border: 1px solid rgba(31, 42, 58, 0.08);
+  box-shadow: var(--shadow);
+  display: grid;
+  gap: 0.8rem;
+  transition: transform 0.2s var(--ease), box-shadow 0.2s var(--ease),
+    border-color 0.2s var(--ease);
+  text-align: left;
+}
+
+.dms-document-card:hover {
+  transform: translateY(-1px);
+  border-color: rgba(31, 111, 235, 0.28);
+  box-shadow: 0 14px 28px rgba(31, 42, 58, 0.1);
+}
+
+.dms-document-card.active {
+  border-color: rgba(31, 111, 235, 0.35);
+  background: rgba(31, 111, 235, 0.08);
+}
+
+.dms-document-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.dms-document-summary {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.dms-document-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: center;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.dms-empty-state {
+  background: white;
+  border-radius: var(--radius-md);
+  border: 1px dashed rgba(31, 42, 58, 0.18);
+  padding: 1.2rem;
+  box-shadow: var(--shadow);
+  display: grid;
+  gap: 0.8rem;
+  justify-items: start;
 }
 
 .file-main {
@@ -2584,6 +2715,11 @@ button {
 
 .file-action.ghost {
   background: white;
+}
+
+.dms .folder-item.active {
+  background: rgba(31, 111, 235, 0.12);
+  color: var(--ink);
 }
 
 .dms-preview {
@@ -3033,6 +3169,112 @@ button {
   display: flex;
   flex-direction: column;
   gap: 1.4rem;
+}
+
+.demo-pathways-panel {
+  gap: 1.5rem;
+  background:
+    radial-gradient(circle at top right, rgba(31, 111, 235, 0.12), transparent 28%),
+    linear-gradient(180deg, #ffffff 0%, #f5f8fd 100%);
+}
+
+.demo-pathways-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1.2rem;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.demo-pathways-copy {
+  display: grid;
+  gap: 0.55rem;
+  max-width: 58rem;
+}
+
+.demo-pathways-detail {
+  max-width: 68ch;
+}
+
+.demo-pathways-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.demo-summary-pill {
+  padding: 0.42rem 0.7rem;
+  border-radius: 999px;
+  background: rgba(31, 111, 235, 0.08);
+  border: 1px solid rgba(31, 111, 235, 0.12);
+  color: var(--ink);
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+.demo-pathways-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.demo-story-card {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(31, 42, 58, 0.08);
+  border-radius: 18px;
+  padding: 1rem;
+  display: grid;
+  gap: 0.9rem;
+  box-shadow: 0 14px 28px rgba(31, 42, 58, 0.08);
+}
+
+.demo-story-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.8rem;
+  align-items: center;
+}
+
+.demo-story-step,
+.demo-story-module {
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.demo-story-step {
+  color: var(--accent);
+}
+
+.demo-story-module {
+  color: var(--muted);
+}
+
+.demo-story-copy {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.demo-story-title {
+  color: var(--ink);
+}
+
+.demo-story-detail {
+  font-size: 0.88rem;
+}
+
+.demo-story-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.demo-story-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: auto;
 }
 
 .dashboard-grid {
@@ -4329,6 +4571,11 @@ button {
     grid-template-columns: 1fr;
   }
 
+  .demo-pathways-grid,
+  .story-spotlight {
+    grid-template-columns: 1fr;
+  }
+
   .dashboard-rail {
     position: static;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -4477,6 +4724,12 @@ button {
     grid-column: 1 / -1;
   }
 
+  .demo-pathways-summary,
+  .demo-story-actions,
+  .story-spotlight-actions {
+    justify-content: flex-start;
+  }
+
   .registry-item {
     grid-template-columns: 1fr;
   }
@@ -4531,6 +4784,11 @@ button {
 
   .topbar {
     padding: 1.3rem 1.4rem 1rem;
+  }
+
+  .demo-pathways-panel,
+  .story-spotlight {
+    padding: 1rem;
   }
 
   .search {

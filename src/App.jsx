@@ -10,6 +10,7 @@ import ProjectOverview from "./components/ProjectOverview.jsx";
 import ModuleLauncher from "./components/ModuleLauncher.jsx";
 import RolesPanel from "./components/RolesPanel.jsx";
 import RightRail from "./components/RightRail.jsx";
+import DemoPathways from "./components/DemoPathways.jsx";
 import DmsPage from "./components/DmsPage.jsx";
 import SafetyPage from "./components/SafetyPage.jsx";
 import WebmailPage from "./components/WebmailPage.jsx";
@@ -129,6 +130,7 @@ export default function App() {
                   <ProjectPhasePie />
                   <TaskPieCard />
                 </div>
+                <DemoPathways />
                 <div className="dashboard-layout">
                   <div className="dashboard-main">
                     <div className="dashboard-grid">

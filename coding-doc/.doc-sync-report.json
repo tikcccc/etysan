@@ -1,0 +1,41 @@
+{
+  "doc_dir": "/home/tikhong/etysan/coding-doc",
+  "ok": false,
+  "issues": [
+    {
+      "severity": "error",
+      "code": "MISSING_FILE",
+      "message": "Missing required file: /home/tikhong/etysan/coding-doc/coding-architect.md"
+    },
+    {
+      "severity": "error",
+      "code": "MISSING_FILE",
+      "message": "Missing required file: /home/tikhong/etysan/coding-doc/coding-rules.md"
+    },
+    {
+      "severity": "error",
+      "code": "MISSING_FILE",
+      "message": "Missing required file: /home/tikhong/etysan/coding-doc/coding-plan.md"
+    },
+    {
+      "severity": "error",
+      "code": "MISSING_FILE",
+      "message": "Missing required file: /home/tikhong/etysan/coding-doc/api-spec.md"
+    },
+    {
+      "severity": "error",
+      "code": "MISSING_FILE",
+      "message": "Missing required file: /home/tikhong/etysan/coding-doc/data-contract.md"
+    },
+    {
+      "severity": "error",
+      "code": "MISSING_FILE",
+      "message": "Missing required file: /home/tikhong/etysan/coding-doc/acceptance-criteria.md"
+    },
+    {
+      "severity": "error",
+      "code": "MISSING_FILE",
+      "message": "Missing required file: /home/tikhong/etysan/coding-doc/test-strategy.md"
+    }
+  ]
+}

@@ -7,6 +7,7 @@ import {
   imsInspections,
 } from "../data/ims.js";
 import { useWorkspace } from "../context/WorkspaceContext.jsx";
+import StorySpotlight from "./StorySpotlight.jsx";
 
 export default function ImsPage() {
   const [activeTab, setActiveTab] = useState("quality");
@@ -76,6 +77,48 @@ export default function ImsPage() {
       {activeTab === "quality" ? (
         <div className="module-layout">
           <div className="module-main">
+            <StorySpotlight
+              title="Client complaint to CAR closure"
+              description="Route client complaints through investigation, CAR issue, and electronic closure with linked quality records."
+              tags={["Complaint", "Root cause", "CAR"]}
+              primaryAction={{
+                label: "Open complaint story",
+                onClick: () => openComplaintPage(complaintRecords[1] || complaintRecords[0]),
+              }}
+              secondaryAction={{
+                label: "Generate monthly summary",
+                onClick: () =>
+                  openImsInfoBoard(
+                    "Monthly quality summary",
+                    "Open complaints, CAR status, and signed closures queued for reporting.",
+                    [
+                      {
+                        title: "Quality roll-up",
+                        items: complaintRecords.slice(0, 4).map((row) => ({
+                          title: row.subject,
+                          detail: `${row.id} · ${row.client}`,
+                          meta: row.date,
+                          badge: row.status,
+                          badgeTone:
+                            row.status === "Closed"
+                              ? "approved"
+                              : row.status === "Investigation"
+                                ? "warning"
+                                : "review",
+                        })),
+                      },
+                    ],
+                    "Monthly"
+                  ),
+              }}
+              metrics={[
+                {
+                  label: "Open complaint",
+                  value: (complaintRecords[1] || complaintRecords[0])?.id || "CMP-25-004",
+                },
+                { label: "Next action", value: "Issue CAR" },
+              ]}
+            />
             <div className="module-kpis">
               {imsQualityKpis.map((kpi) => (
                 <article key={kpi.label} className="kpi-card">

@@ -6,6 +6,7 @@ import {
   procurementVendors,
 } from "../data/procurement.js";
 import { useWorkspace } from "../context/WorkspaceContext.jsx";
+import StorySpotlight from "./StorySpotlight.jsx";
 
 const procurementTabs = [
   { id: "operations", label: "Operations" },
@@ -29,6 +30,7 @@ export default function ProcurementPage() {
   );
 
   const order = orders[selectedOrder];
+  const deliveryDemoOrder = orders.find((item) => item.step >= 4) || order;
   const openRequisitionPage = () =>
     openPageWorkspace("procurementRequisition", {}, "procurement");
   const openOrderPage = (record) =>
@@ -56,6 +58,23 @@ export default function ProcurementPage() {
       {activeTab === "operations" ? (
         <div className="module-layout">
           <div className="module-main">
+            <StorySpotlight
+              title="PR to delivery verification"
+              description="Route requisitions through approval, delivery note verification, and three-way match handover to QS."
+              tags={["Delivery Note", "GRN", "Invoice variance"]}
+              primaryAction={{
+                label: "Open delivery match",
+                onClick: () => openOrderPage(deliveryDemoOrder),
+              }}
+              secondaryAction={{
+                label: "Start requisition",
+                onClick: openRequisitionPage,
+              }}
+              metrics={[
+                { label: "Priority order", value: deliveryDemoOrder?.id || "PO-25-8822" },
+                { label: "Current stage", value: deliveryDemoOrder?.status || "Delivery Pending" },
+              ]}
+            />
             <div className="module-kpis">
               {procurementKpis.map((kpi) => (
                 <article key={kpi.label} className="kpi-card">
