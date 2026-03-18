@@ -15,7 +15,9 @@ export default function ApprovalQueue() {
         <button
           className="ghost-button"
           type="button"
-          onClick={() => openWorkspace("notificationCenter")}
+          onClick={() =>
+            openWorkspace("notificationCenter", { initialTab: "approvals" })
+          }
         >
           Open notification center
         </button>

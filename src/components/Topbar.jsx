@@ -74,7 +74,7 @@ export default function Topbar({ activeView = "home" }) {
           <button
             className="primary-button"
             type="button"
-            onClick={() => openWorkspace("notificationCenter")}
+            onClick={() => openWorkspace("notificationCenter", { initialTab: "tasks" })}
           >
             To-Do & Notifications
           </button>

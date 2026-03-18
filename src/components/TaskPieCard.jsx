@@ -56,7 +56,7 @@ export default function TaskPieCard() {
         <button
           className="ghost-button"
           type="button"
-          onClick={() => openWorkspace("notificationCenter")}
+          onClick={() => openWorkspace("notificationCenter", { initialTab: "tasks" })}
         >
           Open notification center
         </button>

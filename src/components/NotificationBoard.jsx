@@ -14,7 +14,9 @@ export default function NotificationBoard() {
         <button
           className="ghost-button"
           type="button"
-          onClick={() => openWorkspace("notificationCenter")}
+          onClick={() =>
+            openWorkspace("notificationCenter", { initialTab: "notifications" })
+          }
         >
           Open notification center
         </button>
@@ -25,7 +27,9 @@ export default function NotificationBoard() {
             className="notification-card"
             key={note.title}
             type="button"
-            onClick={() => openWorkspace("notificationCenter")}
+            onClick={() =>
+              openWorkspace("notificationCenter", { initialTab: "notifications" })
+            }
           >
             <p className="notification-title">{note.title}</p>
             <p className="notification-detail">{note.detail}</p>

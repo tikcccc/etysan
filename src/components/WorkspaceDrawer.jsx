@@ -171,6 +171,10 @@ function priorityTone(value = "") {
   return "approved";
 }
 
+function isNotificationTab(value) {
+  return value === "tasks" || value === "approvals" || value === "notifications";
+}
+
 function findHrEmployeeByName(name = "") {
   return hrEmployees.find((employee) => employee.name === name) || null;
 }
@@ -430,8 +434,43 @@ function NotificationCenterWorkspace({
   openPageWorkspace,
   openWorkspace,
   resolveRecord,
+  workspace,
 }) {
   const approvalQueue = approvals.map((item) => resolveRecord("approvals", item));
+  const notificationTabs = [
+    {
+      id: "tasks",
+      label: "To-do list",
+      count: tasks.length,
+      subtitle: "Outstanding work items and upcoming deliverables.",
+    },
+    {
+      id: "approvals",
+      label: "Pending approvals",
+      count: approvalQueue.length,
+      subtitle: "Decision items routed from QS, procurement, safety, and HR.",
+    },
+    {
+      id: "notifications",
+      label: "Notifications",
+      count: notifications.length,
+      subtitle: "Unread updates and reminders from connected modules.",
+    },
+  ];
+  const initialTab =
+    isNotificationTab(workspace?.payload?.initialTab)
+      ? workspace.payload.initialTab
+      : workspace?.kind === "approvalInbox"
+        ? "approvals"
+        : "tasks";
+  const [activeTab, setActiveTab] = useState(initialTab);
+
+  useEffect(() => {
+    setActiveTab(initialTab);
+  }, [initialTab]);
+
+  const activeTabMeta =
+    notificationTabs.find((item) => item.id === activeTab) || notificationTabs[0];
 
   function openTaskTarget(task) {
     switch (task.module) {
@@ -556,7 +595,7 @@ function NotificationCenterWorkspace({
     <WorkspaceShell
       moduleLabel="Home"
       title="Notification Center"
-      subtitle="Unified to-do list, approval actions, and cross-module notifications."
+      subtitle="Tabbed hub for action items, approvals, and cross-module notifications."
       badge={`${tasks.length + approvalQueue.length + notifications.length} live`}
       badgeTone="review"
       footer={
@@ -567,102 +606,156 @@ function NotificationCenterWorkspace({
     >
       <div className="workspace-content-grid">
         <div className="workspace-stack">
-          <DrawerSection
-            title="To-do list"
-            subtitle="Outstanding work items and upcoming deliverables."
-          >
-            <div className="workspace-table-list">
-              {tasks.map((task) => (
-                <button
-                  key={`${task.module}-${task.title}`}
-                  className="workspace-table-row"
-                  type="button"
-                  onClick={() => openTaskTarget(task)}
-                >
-                  <div>
-                    <p className="workspace-info-title">{task.title}</p>
-                    <p className="workspace-info-detail">
-                      {task.module} · Due {task.due}
-                    </p>
-                  </div>
-                  <div className="workspace-info-meta">
-                    <span className={`workspace-badge ${priorityTone(task.priority)}`}>
-                      {task.priority}
-                    </span>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </DrawerSection>
+          <div className="workspace-tab-shell">
+            <div className="workspace-tabs" role="tablist" aria-label="Notification center sections">
+              {notificationTabs.map((tab) => {
+                const isActive = activeTab === tab.id;
 
-          <DrawerSection
-            title="Pending approvals"
-            subtitle="Decision items routed from QS, procurement, safety, and HR."
-          >
-            <div className="workspace-table-list">
-              {approvalQueue.map((item) => (
-                <button
-                  key={item.id}
-                  className="workspace-table-row"
-                  type="button"
-                  onClick={() =>
-                    openWorkspace("approvalRecord", {
-                      record: item,
-                    })
-                  }
-                >
-                  <div>
-                    <p className="workspace-info-title">{item.title}</p>
-                    <p className="workspace-info-detail">
-                      {item.id} · {item.module} · Owner {item.owner}
-                    </p>
-                  </div>
-                  <div className="workspace-info-meta">
-                    <span>{item.due}</span>
-                    <span className={`workspace-badge ${statusClass(item.status)}`}>
-                      {item.status}
-                    </span>
-                  </div>
-                </button>
-              ))}
+                return (
+                  <button
+                    key={tab.id}
+                    id={`notification-tab-${tab.id}`}
+                    className={`workspace-tab ${isActive ? "active" : ""}`}
+                    type="button"
+                    role="tab"
+                    aria-selected={isActive}
+                    aria-controls={`notification-panel-${tab.id}`}
+                    onClick={() => setActiveTab(tab.id)}
+                  >
+                    <span className="workspace-tab-label">{tab.label}</span>
+                    <span className="workspace-tab-count">{tab.count}</span>
+                  </button>
+                );
+              })}
             </div>
-          </DrawerSection>
+
+            {activeTab === "tasks" ? (
+              <DrawerSection
+                title="To-do list"
+                subtitle="Outstanding work items and upcoming deliverables."
+              >
+                <div
+                  id="notification-panel-tasks"
+                  className="workspace-table-list"
+                  role="tabpanel"
+                  aria-labelledby="notification-tab-tasks"
+                >
+                  {tasks.map((task) => (
+                    <button
+                      key={`${task.module}-${task.title}`}
+                      className="workspace-table-row"
+                      type="button"
+                      onClick={() => openTaskTarget(task)}
+                    >
+                      <div>
+                        <p className="workspace-info-title">{task.title}</p>
+                        <p className="workspace-info-detail">
+                          {task.module} · Due {task.due}
+                        </p>
+                      </div>
+                      <div className="workspace-info-meta">
+                        <span className={`workspace-badge ${priorityTone(task.priority)}`}>
+                          {task.priority}
+                        </span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </DrawerSection>
+            ) : null}
+
+            {activeTab === "approvals" ? (
+              <DrawerSection
+                title="Pending approvals"
+                subtitle="Decision items routed from QS, procurement, safety, and HR."
+              >
+                <div
+                  id="notification-panel-approvals"
+                  className="workspace-table-list"
+                  role="tabpanel"
+                  aria-labelledby="notification-tab-approvals"
+                >
+                  {approvalQueue.map((item) => (
+                    <button
+                      key={item.id}
+                      className="workspace-table-row"
+                      type="button"
+                      onClick={() =>
+                        openWorkspace("approvalRecord", {
+                          record: item,
+                        })
+                      }
+                    >
+                      <div>
+                        <p className="workspace-info-title">{item.title}</p>
+                        <p className="workspace-info-detail">
+                          {item.id} · {item.module} · Owner {item.owner}
+                        </p>
+                      </div>
+                      <div className="workspace-info-meta">
+                        <span>{item.due}</span>
+                        <span className={`workspace-badge ${statusClass(item.status)}`}>
+                          {item.status}
+                        </span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </DrawerSection>
+            ) : null}
+
+            {activeTab === "notifications" ? (
+              <DrawerSection
+                title="Notifications"
+                subtitle="Unread updates and reminders from connected modules."
+              >
+                <div
+                  id="notification-panel-notifications"
+                  className="workspace-table-list"
+                  role="tabpanel"
+                  aria-labelledby="notification-tab-notifications"
+                >
+                  {notifications.map((item) => (
+                    <button
+                      key={`${item.title}-${item.detail}`}
+                      className="workspace-table-row"
+                      type="button"
+                      onClick={() => openNotificationTarget(item)}
+                    >
+                      <div>
+                        <p className="workspace-info-title">{item.title}</p>
+                        <p className="workspace-info-detail">{item.detail}</p>
+                      </div>
+                      <div className="workspace-info-meta">
+                        <span className="workspace-badge review">Unread</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </DrawerSection>
+            ) : null}
+          </div>
         </div>
 
         <div className="workspace-stack">
-          <DrawerSection
-            title="Notifications"
-            subtitle="Unread updates and reminders from connected modules."
-          >
-            <div className="workspace-table-list">
-              {notifications.map((item) => (
-                <button
-                  key={`${item.title}-${item.detail}`}
-                  className="workspace-table-row"
-                  type="button"
-                  onClick={() => openNotificationTarget(item)}
-                >
-                  <div>
-                    <p className="workspace-info-title">{item.title}</p>
-                    <p className="workspace-info-detail">{item.detail}</p>
-                  </div>
-                  <div className="workspace-info-meta">
-                    <span className="workspace-badge review">Unread</span>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </DrawerSection>
-
           <DrawerSection title="Center summary">
             <MetaGrid
               items={[
+                { label: "Current tab", value: activeTabMeta.label },
+                { label: "Items shown", value: String(activeTabMeta.count) },
                 { label: "To-do", value: `${tasks.length} open` },
                 { label: "Approvals", value: `${approvalQueue.length} routed` },
                 { label: "Notifications", value: `${notifications.length} unread` },
-                { label: "Home scope", value: "Cross-module" },
               ]}
             />
+          </DrawerSection>
+          <DrawerSection title="Category note" subtitle={activeTabMeta.subtitle}>
+            <div className="workspace-note">
+              <p>
+                Tabs separate action queues from FYI updates, while keeping every
+                item inside the same cross-module center.
+              </p>
+            </div>
           </DrawerSection>
         </div>
       </div>
